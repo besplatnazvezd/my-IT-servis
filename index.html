@@ -3,107 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-MILLIONAIRE | Аккаунты</title>
+    <title>TG-MILLIONAIRE | Магазин Аккаунтов</title>
+    <!-- Подключаем стили и базу данных -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #050505; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .neon-text { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
     </style>
 </head>
 <body class="font-sans min-h-screen">
 
+    <!-- Шапка сайта -->
     <nav class="flex justify-between items-center p-6 max-w-6xl mx-auto">
-        <div class="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">TG-MILLIONAIRE</div>
+        <div class="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent uppercase tracking-tighter">
+            TG-MILLIONAIRE
+        </div>
         <div id="auth-section">
-            <button onclick="showAuthModal()" class="glass px-6 py-2 rounded-full font-bold">ВОЙТИ</button>
+            <!-- Кнопка входа (динамическая) -->
+            <button onclick="showAuthModal()" class="glass px-6 py-2 rounded-full font-bold hover:bg-white hover:text-black transition">
+                ВОЙТИ
+            </button>
         </div>
     </nav>
 
-    <header class="text-center py-10 px-4">
-        <h1 class="text-5xl md:text-7xl font-black mb-4 uppercase tracking-tighter">Магазин <span class="text-blue-500">будущего</span></h1>
-        <p class="text-gray-400">Твой товар уже ждет тебя в базе.</p>
+    <!-- Главный баннер -->
+    <header class="text-center py-16 px-4">
+        <h1 class="text-6xl md:text-8xl font-black mb-4 uppercase tracking-tighter neon-text">
+            Магазин <span class="text-blue-500">будущего</span>
+        </h1>
+        <p class="text-gray-400 text-lg">Твой успех начинается с качественного аккаунта.</p>
     </header>
 
+    <!-- Сетка товаров -->
     <section class="max-w-6xl mx-auto px-6 pb-20">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="products-list">
-            <!-- Сюда прилетят товары из базы -->
-            <p class="text-gray-500">Загрузка товаров...</p>
+            <!-- Тут появится надпись при загрузке -->
+            <p class="text-gray-500 text-center col-span-full">Загрузка товаров из базы...</p>
         </div>
     </section>
 
-    <!-- Модалка входа (простая) -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
-        <div class="glass p-8 rounded-[40px] max-w-md w-full">
-            <h2 class="text-2xl font-bold mb-6">Вход в кабинет</h2>
-            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-4 text-white outline-none focus:border-blue-500">
-            <input id="auth-password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 text-white outline-none focus:border-blue-500">
-            <div class="flex gap-4">
-                <button onclick="handleLogin()" class="flex-1 bg-blue-600 p-4 rounded-2xl font-bold">ВОЙТИ</button>
-                <button onclick="handleSignUp()" class="flex-1 border border-white/20 p-4 rounded-2xl font-bold">РЕГИСТРАЦИЯ</button>
+    <!-- Окно входа (Модалка) -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center p-4 z-[100]">
+        <div class="glass p-10 rounded-[40px] max-w-md w-full border-blue-500/20 shadow-2xl">
+            <h2 class="text-3xl font-bold mb-6 text-center">Личный кабинет</h2>
+                        <input id="auth-email" type="email" placeholder="Твой Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-4 text-white focus:border-blue-500 outline-none transition">
+            <input id="auth-password" type="password" placeholder="Пароль (мин. 6 знаков)" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 text-white focus:border-blue-500 outline-none transition">
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-2xl font-bold transition shadow-lg">ВОЙТИ</button>
+                <button onclick="handleSignUp()" class="w-full border border-white/10 hover:bg-white/5 p-4 rounded-2xl font-bold transition">СОЗДАТЬ АККАУНТ</button>
             </div>
-            <button onclick="closeAuthModal()" class="w-full mt-4 text-gray-500 text-sm">Закрыть</button>
+            
+            <button onclick="closeAuthModal()" class="w-full mt-6 text-gray-500 hover:text-white transition text-sm">Закрыть окно</button>
         </div>
     </div>
 
+    <!-- ЛОГИКА САЙТА -->
     <script>
-        // ВСТАВЬ СВОИ ДАННЫЕ СЮДА!
-        const URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
-        const KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
-        const sb = supabase.createClient(URL, KEY);
+        // --- НАСТРОЙКИ (ВСТАВЬ СВОИ ДАННЫЕ) ---
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'; 
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'; 
+        // --------------------------------------
 
-        // Показ товаров
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        // Показ и скрытие модалки
+        function showAuthModal() {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('flex');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('flex');
+        }
+
+        // Загрузка товаров
         async function loadProducts() {
-            const { data, error } = await sb.from('products').select('*');
             const list = document.getElementById('products-list');
-            if (data) {
-                list.innerHTML = data.map(p => 
-                    <div class="glass p-8 rounded-[40px] hover:border-blue-500/50 transition-all">
-                        <div class="text-5xl mb-6">📦</div>
+            try {
+                const { data, error } = await sb.from('products').select('*');
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<p class="text-gray-500 text-center col-span-full italic">Товаров в базе пока нет...</p>';
+                    return;                }
+
+                list.innerHTML = data.map(p => `
+                    <div class="glass p-8 rounded-[40px] border border-white/5 hover:border-blue-500/50 transition-all group">
+                        <div class="text-5xl mb-6 group-hover:scale-110 transition duration-300">📦</div>
                         <h3 class="text-2xl font-bold mb-2">${p.name}</h3>
-                        <p class="text-gray-500 mb-6 text-sm">${p.description || 'Без описания'}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-3xl font-black">${p.price} ₽</span>
-                            <button class="bg-blue-600 px-6 py-3 rounded-2xl font-bold">КУПИТЬ</button>
+                        <p class="text-gray-500 mb-6 text-sm font-medium leading-relaxed">${p.description || 'Высокое качество, мгновенная выдача.'}</p>
+                        <div class="flex justify-between items-center mt-auto">
+                            <span class="text-3xl font-black text-white">${p.price} ₽</span>
+                            <button onclick="alert('Для покупки нужно пополнить баланс в кабинете!')" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold shadow-lg transition">
+                                КУПИТЬ
+                            </button>
                         </div>
                     </div>
-                ).join('');
+                `).join('');
+            } catch (e) {
+                list.innerHTML = `<p class="text-red-500 text-center col-span-full text-sm">Ошибка базы: ${e.message}<br>Проверь RLS Policies в Supabase!</p>`;
             }
         }
 
-        // Логика авторизации
+        // Проверка входа
         async function checkUser() {
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
-                // Если залогинен, показываем почту и баланс (его берем из таблицы profiles)
-                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('auth-section').innerHTML = 
+                document.getElementById('auth-section').innerHTML = `
                     <div class="flex items-center gap-4">
-                        <span class="text-blue-400 font-bold">${prof?.balance || 0} ₽</span>
-                        <span class="text-sm text-gray-400">${user.email}</span>
-                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="text-xs text-red-500">Выйти</button>
+                        <div class="flex flex-col items-end">
+                            <span class="text-blue-400 font-black tracking-tighter">0.00 ₽</span>
+                            <span class="text-[10px] text-gray-500 uppercase">${user.email}</span>
+                        </div>
+                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="bg-white/5 p-2 rounded-xl hover:bg-red-500/20 transition">
+                            🚪
+                        </button>
                     </div>
-                ;
+                `;
             }
         }
 
-        function showAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
-        function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
-
+        // Вход и Регистрация
         async function handleSignUp() {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const { error } = await sb.auth.signUp({ email, password });
-            if (error) alert(error.message); else alert('Успешно! Теперь войдите.');
+            if (error) alert("Ошибка: " + error.message);
+            else alert("Успех! Теперь нажми кнопку ВОЙТИ");
         }
 
         async function handleLogin() {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message); else location.reload();
+            if (error) alert("Ошибка: " + error.message);
+            else location.reload();
         }
 
+        // Запуск
         loadProducts();
         checkUser();
     </script>
