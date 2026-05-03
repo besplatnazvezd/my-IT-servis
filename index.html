@@ -69,9 +69,51 @@
 
     <script>
         // Тут мы потом пропишем логику покупки и подключения твоей базы Supabase
-        const supabaseUrl = 'ТВОЙ_URL_ИЗ_ЗАМЕТОК';
-        const supabaseKey = 'ТВОЙ_ANON_KEY_ИЗ_ЗАМЕТОК';
+        const supabaseUrl = 'https://tivhinnaxagsazahtlnu.supabase.co';
+        const supabaseKey = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    </script>
-</body>
-</html>
+    <script>
+    // 1. Настройка подключения
+    const supabaseUrl = 'https://tivhinnaxagsazahtlnu.supabase.co';
+    const supabaseKey = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // 2. Функция для загрузки товаров из базы
+    async function loadProducts() {
+        const { data: products, error } = await _supabase
+            .from('products')
+            .select('*');
+
+        if (error) {
+            console.error('Ошибка загрузки:', error);
+            return;
+        }
+
+        const list = document.getElementById('products-list');
+        list.innerHTML = ''; // Очищаем демо-карточки
+
+        products.forEach(item => {
+            list.innerHTML += `
+                <div class="glass p-8 rounded-[40px] border border-white/5 hover:border-blue-500/50 transition-all">
+                    <div class="text-5xl mb-6">🚀</div>
+                    <h3 class="text-2xl font-bold mb-2">${item.name}</h3>
+                    <p class="text-gray-500 mb-6 font-medium text-sm">${item.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-3xl font-black">${item.price} ₽</span>
+                        <button onclick="buyItem('${item.id}')" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold transition">
+                            КУПИТЬ
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // 3. Функция для кнопки "Купить" (пока просто заглушка)
+    function buyItem(id) {
+        alert('Система оплаты подключается! ID товара: ' + id);
+    }
+
+    // Запускаем загрузку при открытии сайта
+    loadProducts();
+</script>
