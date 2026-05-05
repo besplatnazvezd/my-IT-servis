@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN PANEL | TG-STORE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; }
+        input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; outline: none; width: 100%; margin-bottom: 10px; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-2xl font-black text-blue-500 italic">ADMIN PANEL</h1>
+            <a href="index.html" class="text-sm text-gray-500 underline">На сайт</a>
+        </div>
+
+        <!-- СЕКЦИЯ 1: ДОБАВИТЬ ТОВАР -->
+        <div class="card mb-8">
+            <h2 class="text-lg font-bold mb-4">➕ Добавить товар</h2>
+            <input id="p-name" type="text" placeholder="Название (например: США 🇺🇸)">
+            <input id="p-desc" type="text" placeholder="Описание">
+            <input id="p-price" type="number" placeholder="Цена (руб)">
+            <button onclick="addProduct()" id="add-btn" class="w-full bg-blue-600 p-3 rounded-xl font-bold mt-2">ОПУБЛИКОВАТЬ</button>
+        </div>
+
+        <!-- СЕКЦИЯ 2: УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ -->
+        <div class="card">
+            <h2 class="text-lg font-bold mb-4">👥 Пользователи и баланс</h2>
+            <div id="users-list" class="space-y-3">
+                <p class="text-gray-500">Загрузка юзеров...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        // 1. Добавление товара
+        async function addProduct() {
+            const name = document.getElementById('p-name').value;
+            const description = document.getElementById('p-desc').value;
+            const price = document.getElementById('p-price').value;
+
+            if(!name || !price) return alert("Заполни имя и цену!");
+
+            const { error } = await sb.from('products').insert([{ name, description, price }]);
+                      if(error) alert(error.message);
+            else { alert("Товар добавлен!"); location.reload(); }
+        }
+
+        // 2. Загрузка пользователей
+        async function loadUsers() {
+            const { data, error } = await sb.from('profiles').select('*');
+            if(error) return console.error(error);
+
+            const list = document.getElementById('users-list');
+            list.innerHTML = data.map(u => `
+                <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div class="text-xs">
+                        <div class="font-bold text-gray-300">${u.email}</div>
+                        <div class="text-blue-400 font-black text-lg">${u.balance} ₽</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="updateBalance('${u.id}', 100)" class="bg-green-600/20 text-green-500 p-2 rounded-lg text-[10px] font-bold">+100</button>
+                        <button onclick="updateBalance('${u.id}', -100)" class="bg-red-600/20 text-red-500 p-2 rounded-lg text-[10px] font-bold">-100</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 3. Изменение баланса
+        async function updateBalance(userId, amount) {
+            // Сначала получаем текущий баланс
+            const { data } = await sb.from('profiles').select('balance').eq('id', userId).single();
+            const newBalance = (data.balance || 0) + amount;
+
+            const { error } = await sb.from('profiles').update({ balance: newBalance }).eq('id', userId);
+            
+            if(error) alert(error.message);
+            else loadUsers();
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>
