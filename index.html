@@ -3,107 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-STORE | 16 YEARS CEO</title>
+    <title>TG-MILLIONAIRE | SHOP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #050505; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { background-color: #050505; color: white; scroll-behavior: smooth; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        input::placeholder { color: rgba(255, 255, 255, 0.2); }
     </style>
 </head>
 <body class="font-sans min-h-screen">
 
-    <nav class="flex justify-between items-center p-6 max-w-6xl mx-auto">
-        <div class="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent uppercase">TG-MILLIONAIRE</div>
+    <!-- Навигация -->
+    <nav class="flex justify-between items-center p-4 max-w-6xl mx-auto sticky top-0 bg-[#050505]/80 backdrop-blur-lg z-50">
+        <div class="text-xl font-black bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent uppercase tracking-tighter">
+            TG-MILLIONAIRE
+        </div>
         <div id="auth-section">
-            <button onclick="showAuthModal()" class="glass px-6 py-2 rounded-full font-bold">ВОЙТИ</button>
+            <button onclick="showAuthModal()" class="glass px-4 py-2 rounded-xl text-sm font-bold">ВОЙТИ</button>
         </div>
     </nav>
 
-    <header class="text-center py-10 px-4">
-        <h1 class="text-5xl font-black mb-4 uppercase tracking-tighter italic text-blue-500">Shop Online</h1>
+    <header class="text-center py-6 px-4">
+        <h1 class="text-3xl font-black uppercase tracking-tighter italic text-blue-500 mb-6">Shop Online</h1>
+        
+        <!-- СТРОКА ПОИСКА -->
+        <div class="max-w-md mx-auto relative">
+            <input type="text" id="search-input" oninput="filterProducts()" placeholder="Поиск аккаунтов (например: США)..." 
+                class="w-full bg-white/5 border border-white/10 p-3 px-5 rounded-2xl outline-none focus:border-blue-500 transition text-sm">
+        </div>
     </header>
 
-    <section class="max-w-6xl mx-auto px-6 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="products-list">
-            <p class="text-gray-500 text-center col-span-full">Загрузка товаров...</p>
+    <!-- Сетка товаров (Компактная) -->
+    <section class="max-w-4xl mx-auto px-4 pb-20">
+        <div class="grid grid-cols-1 gap-3" id="products-list">
+            <p class="text-gray-600 text-center py-10">Загрузка витрины...</p>
         </div>
     </section>
 
     <!-- Окно входа -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center p-4 z-[100]">
-        <div class="glass p-8 rounded-[40px] max-w-md w-full">
-            <h2 class="text-2xl font-bold mb-6 text-center">Вход</h2>
-            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-4 text-white outline-none">
-            <input id="auth-password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 text-white outline-none">
-            
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold mb-3">ВОЙТИ</button>
-            <button onclick="handleSignUp()" class="w-full border border-white/20 p-4 rounded-2xl font-bold mb-3">РЕГИСТРАЦИЯ</button>
-            <button onclick="closeAuthModal()" class="w-full text-gray-500 text-sm">Закрыть</button>
+    <div id="auth-modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-4 z-[100]">
+        <div class="glass p-8 rounded-[30px] max-w-sm w-full border-blue-500/20">
+            <h2 class="text-xl font-bold mb-6 text-center">Личный кабинет</h2>
+            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-3 text-white outline-none">
+                        <input id="auth-password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-6 text-white outline-none">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 p-3 rounded-xl font-bold mb-2">ВОЙТИ</button>
+            <button onclick="handleSignUp()" class="w-full border border-white/10 p-3 rounded-xl font-bold text-sm mb-4">РЕГИСТРАЦИЯ</button>
+            <button onclick="closeAuthModal()" class="w-full text-gray-500 text-xs">Закрыть</button>
         </div>
     </div>
 
     <script>
-        // ВАЖНО: Проверь свои ключи! 
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
-                const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'; 
-
+        const SB_KEY = 'ТВОЙ_ANON_KEY';
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        // Открытие модалки
-        function showAuthModal() {
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-modal').classList.add('flex');
-        }
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('flex');
-        }
+        let allProducts = []; // Тут будем хранить товары для поиска
 
-        // Загрузка товаров
+        function showAuthModal() { document.getElementById('auth-modal').classList.replace('hidden', 'flex'); }
+        function closeAuthModal() { document.getElementById('auth-modal').classList.replace('flex', 'hidden'); }
+
         async function loadProducts() {
-            try {
-                // Пытаемся взять товары (и маленькая, и большая буква на всякий случай)
-                const { data, error } = await sb.from('products').select('*');
-                if (error) throw error;
+            const { data, error } = await sb.from('products').select('*');
+            if (error) return alert("Ошибка: " + error.message);
+            
+            allProducts = data;
+            renderProducts(allProducts);
+        }
 
-                const list = document.getElementById('products-list');
-                if (!data || data.length === 0) {
-                    list.innerHTML = '<p class="text-gray-500 text-center col-span-full">Товаров нет. Добавь их в таблицу products!</p>';
-                    return;
-                }
-
-                list.innerHTML = data.map(p => `
-                    <div class="glass p-8 rounded-[40px] border border-white/5">
-                        <div class="text-5xl mb-4">📦</div>
-                        <h3 class="text-xl font-bold">${p.name}</h3>
-                        <p class="text-gray-500 text-sm mb-6">${p.description || 'No description'}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-2xl font-black">${p.price || 0} ₽</span>
-                            <button class="bg-blue-600 px-4 py-2 rounded-xl font-bold">BUY</button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (err) {
-                alert("Ошибка загрузки товаров: " + err.message);
+        // Функция отрисовки товаров
+        function renderProducts(items) {
+            const list = document.getElementById('products-list');
+            if (items.length === 0) {
+                list.innerHTML = '<p class="text-gray-600 text-center py-10">Ничего не найдено</p>';
+                return;
             }
+
+            list.innerHTML = items.map(p => `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between hover:border-blue-500/30 transition group">
+                    <div class="flex items-center gap-4">
+                        <div class="text-3xl bg-white/5 w-12 h-12 flex items-center justify-center rounded-xl group-hover:scale-110 transition">📦</div>
+                        <div>
+                            <h3 class="font-bold text-sm uppercase">${p.name}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">${p.description || 'Аккаунты'}</p>
+                                                    </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-black text-lg">${p.price || 0} ₽</span>
+                        <button onclick="alert('Пополните баланс!')" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-xs font-bold transition">BUY</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Авторизация
-        async function handleSignUp() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const { data, error } = await sb.auth.signUp({ email, password });
-            if (error) alert("Ошибка: " + error.message);
-            else alert("Успех! Письмо подтверждения (если включено) отправлено или теперь можно войти.");
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) alert("Ошибка: " + error.message);
-            else location.reload();
+        // Логика поиска
+        function filterProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                (p.description && p.description.toLowerCase().includes(query))
+            );
+            renderProducts(filtered);
         }
 
         async function checkUser() {
@@ -111,11 +111,25 @@
             if (user) {
                 document.getElementById('auth-section').innerHTML = `
                     <div class="text-right">
-                        <div class="text-blue-400 font-bold">0 ₽</div>
-                        <div class="text-[10px] text-gray-500">${user.email}</div>
+                        <div class="text-blue-400 font-black text-sm">0 ₽</div>
+                        <div class="text-[9px] text-gray-600">${user.email}</div>
                     </div>
                 `;
             }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message); else location.reload();
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const { error } = await sb.auth.signUp({ email, password });
+            if (error) alert(error.message); else alert("Успешно! Теперь войдите.");
         }
 
         loadProducts();
