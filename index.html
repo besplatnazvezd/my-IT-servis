@@ -64,10 +64,10 @@
         async function loadProducts() {
             try {
                 // Пытаемся взять товары (и маленькая, и большая буква на всякий случай)
-                const { data, error } = await sb.from('Products').select('*');
+                const { data, error } = await sb.from('products').select('*');
                 if (error) throw error;
 
-                const list = document.getElementById('Products-list');
+                const list = document.getElementById('products-list');
                 if (!data || data.length === 0) {
                     list.innerHTML = '<p class="text-gray-500 text-center col-span-full">Товаров нет. Добавь их в таблицу products!</p>';
                     return;
