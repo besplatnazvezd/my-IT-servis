@@ -3,96 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-STORE | PREMIUM</title>
+    <title>TG-MILLIONAIRE | PREMIUM SHOP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #050505; color: white; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .btn-blue { background: #2563eb; transition: all 0.2s; }
-        .btn-blue:active { transform: scale(0.95); opacity: 0.8; }
-        input { border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.2s; }
-        input:focus { border-color: #2563eb; outline: none; }
+        :root { --bg: #050505; --text: #ffffff; --glass: rgba(255,255,255,0.03); --border: rgba(255,255,255,0.1); }
+        .light-theme { --bg: #ffffff; --text: #000000; --glass: rgba(0,0,0,0.03); --border: rgba(0,0,0,0.1); }
+        
+        body { background: var(--bg); color: var(--text); transition: 0.3s; font-family: -apple-system, system-ui, sans-serif; }
+        .glass { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border); }
+        .modal-bg { background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); }
+        .btn-blue { background: #2563eb; color: white; transition: 0.2s; }
+        .btn-blue:active { transform: scale(0.95); }
     </style>
 </head>
-<body class="font-sans">
+<body class="min-h-screen">
 
     <!-- Навигация -->
-    <nav class="flex justify-between items-center p-4 sticky top-0 bg-[#050505]/90 backdrop-blur-md z-50 border-b border-white/5">
-        <div class="text-xl font-black text-blue-500 uppercase tracking-tighter">TG-MILLIONAIRE</div>
-        <div id="user-info" class="text-right">
-            <button onclick="openModal('auth-modal')" class="glass px-4 py-1.5 rounded-lg text-sm font-bold">ВОЙТИ</button>
+    <nav class="flex justify-between items-center p-4 sticky top-0 bg-inherit z-50 border-b border-[var(--border)]">
+        <div class="flex items-center gap-3">
+            <div class="text-lg font-black text-blue-500 uppercase italic tracking-tighter">TG-MILLIONAIRE</div>
+            <button onclick="toggleTheme()" class="glass p-2 rounded-xl text-[10px]">🌓 ТЕМА</button>
+        </div>
+        <div id="user-ui">
+            <button onclick="openModal('auth-modal')" class="glass px-4 py-1.5 rounded-lg text-xs font-bold uppercase">Войти</button>
         </div>
     </nav>
 
     <!-- Поиск и Заголовок -->
-    <div class="p-4 max-w-2xl mx-auto">
-        <input type="text" id="search" oninput="filterItems()" placeholder="Поиск товара..." 
-               class="w-full bg-white/5 p-3 rounded-xl text-sm mb-6">
-        
-        <div id="products-grid" class="grid grid-cols-1 gap-3">
-            <div class="text-center text-gray-500 py-10">Загрузка витрины...</div>
+    <header class="p-4 max-w-2xl mx-auto text-center">
+        <h1 class="text-4xl font-black uppercase italic mb-6 tracking-tighter text-blue-500">Shop Online</h1>
+        <input type="text" id="search" oninput="filterItems()" placeholder="Поиск аккаунтов..." 
+               class="w-full glass p-3.5 rounded-2xl text-sm outline-none focus:border-blue-500 transition">
+    </header>
+
+    <!-- Витрина -->
+    <section class="p-4 max-w-2xl mx-auto pb-24">
+        <div id="products-grid" class="grid grid-cols-1 gap-2">
+            <div class="text-center opacity-50 py-10 text-sm">Загрузка товаров...</div>
+        </div>
+    </section>
+
+    <!-- КРАСИВОЕ ОКНО УВЕДОМЛЕНИЙ (Вместо alert) -->
+    <div id="msg-modal" class="fixed inset-0 modal-bg hidden items-center justify-center p-6 z-[200]">
+                <div class="glass p-8 rounded-[40px] w-full max-w-xs text-center border-blue-500/30">
+            <div id="msg-icon" class="text-5xl mb-4">💡</div>
+            <div id="msg-text" class="font-bold text-sm leading-relaxed mb-6"></div>
+            <button onclick="closeModal('msg-modal')" class="w-full btn-blue p-4 rounded-2xl font-bold uppercase tracking-widest text-xs">Понятно</button>
         </div>
     </div>
 
-    <!-- МОДАЛКА: ВХОД / РЕГИСТРАЦИЯ -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-4 z-[100]">
-        <div class="glass p-6 rounded-3xl w-full max-w-sm">
-            <h2 id="auth-title" class="text-xl font-bold mb-6 text-center text-blue-400">Личный кабинет</h2>
-            
-            <input id="email" type="email" placeholder="Email" class="w-full bg-white/5 p-3 rounded-xl mb-3">
-            <input id="password" type="password" placeholder="Пароль" class="w-full bg-white/5 p-3 rounded-xl mb-4">
-            
-            <div class="space-y-3">
-                <button id="login-btn" onclick="authAction('login')" class="w-full btn-blue p-3 rounded-xl font-bold">ВОЙТИ</button>
-                                <button id="signup-btn" onclick="authAction('signup')" class="w-full bg-white/5 p-3 rounded-xl font-bold text-sm">РЕГИСТРАЦИЯ</button>
-                <button onclick="resetPassword()" class="w-full text-gray-500 text-xs py-2">Забыли пароль?</button>
-            </div>
-            
-            <button onclick="closeModal('auth-modal')" class="w-full mt-4 text-gray-600 text-sm italic">Закрыть</button>
+    <!-- ОКНО ВХОДА -->
+    <div id="auth-modal" class="fixed inset-0 modal-bg hidden items-center justify-center p-6 z-[100]">
+        <div class="glass p-8 rounded-[40px] w-full max-w-sm">
+            <h2 class="text-2xl font-black mb-6 text-center uppercase tracking-tighter">Кабинет</h2>
+            <input id="email" type="email" placeholder="Email" class="w-full glass p-4 rounded-2xl mb-3 outline-none focus:border-blue-500">
+            <input id="password" type="password" placeholder="Пароль" class="w-full glass p-4 rounded-2xl mb-6 outline-none focus:border-blue-500">
+            <button onclick="auth('login')" class="w-full btn-blue p-4 rounded-2xl font-bold mb-3 uppercase text-xs">Войти</button>
+            <button onclick="auth('signup')" class="w-full glass p-4 rounded-2xl font-bold mb-3 uppercase text-[10px]">Создать аккаунт</button>
+            <button onclick="resetPass()" class="w-full text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-4">Забыли пароль?</button>
+            <button onclick="closeModal('auth-modal')" class="w-full opacity-30 text-[10px] font-black uppercase">Закрыть</button>
         </div>
     </div>
 
     <script>
-        // --- КЛЮЧИ (АВТО-ОЧИСТКА ОТ ПРОБЕЛОВ) ---
+        // --- КЛЮЧИ (ВСТАВЬ СВОИ) ---
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let allItems = [];
+        let allProducts = [];
 
-        // Управление модалками
+        // Функции модалок
         function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
+        function toggleTheme() { document.body.classList.toggle('light-theme'); }
+        function showMsg(text, icon = '💡') {            document.getElementById('msg-text').innerHTML = text;
+            document.getElementById('msg-icon').innerText = icon;
+            openModal('msg-modal');
+        }
 
         // Загрузка товаров
-        async function fetchProducts() {
-            try {
-                const { data, error } = await sb.from('products').select('*');
-                if (error) throw error;
-                allItems = data;
-                render(allItems);
-            } catch (e) {
-                document.getElementById('products-grid').innerHTML = `<div class="text-red-500 text-xs">Ошибка базы: ${e.message}</div>`;
-            }
+        async function load() {
+            const { data, error } = await sb.from('products').select('*');
+            if (error) return showMsg(error.message, '❌');
+            allProducts = data;
+            render(allProducts);
         }
 
         function render(items) {
             const grid = document.getElementById('products-grid');
-            if (!items.length) { grid.innerHTML = '<div class="text-gray-600 text-center">Товары не найдены</div>'; return; }
-            
+            if(!items.length) { grid.innerHTML = '<div class="text-center opacity-30 py-10 italic">Ничего не нашли...</div>'; return; }
             grid.innerHTML = items.map(p => `
-                <div class="glass p-3 rounded-2xl flex items-center justify-between border-white/5">
-                    <div class="flex items-center gap-3">
-                        <div class="text-2xl bg-white/5 w-10 h-10 flex items-center justify-center rounded-lg">📦</div>
+                <div class="glass p-4 rounded-2xl flex items-center justify-between group transition">
+                    <div class="flex items-center gap-4">
+                        <div class="text-2xl bg-blue-500/10 w-12 h-12 flex items-center justify-center rounded-xl group-hover:scale-110 transition">📦</div>
                         <div>
-                            <div class="font-bold text-sm uppercase">${p.name}</div>
-                            <div class="text-[10px] text-gray-500 uppercase">${p.description || 'Аккаунт'}</div>
+                            <div class="font-bold text-sm uppercase leading-tight">${p.name}</div>
+                            <div class="text-[9px] opacity-40 uppercase font-black tracking-widest">${p.description || 'Premium Account'}</div>
                         </div>
-                                </div>
-                                                    <div class="flex items-center gap-3">
-                        <div class="font-black text-blue-400">${p.price}₽</div>
-                        <button onclick="alert('Пополните баланс!')" class="btn-blue px-4 py-1.5 rounded-lg text-xs font-bold uppercase italic">Buy</button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="font-blacktext-blue-500 text-lg">${p.price}₽</div>
+                        <button onclick="buyItem('${p.name}', ${p.price})" class="btn-blue px-5 py-2 rounded-xl text-[10px] font-black uppercase italic shadow-lg shadow-blue-500/20">Buy</button>
                     </div>
                 </div>
             `).join('');
@@ -100,59 +113,75 @@
 
         function filterItems() {
             const q = document.getElementById('search').value.toLowerCase();
-            render(allItems.filter(i => i.name.toLowerCase().includes(q)));
+            render(allProducts.filter(i => i.name.toLowerCase().includes(q)));
+        }
+
+        // СИСТЕМА ПОКУПКИ
+        async function buyItem(prodName, price) {
+            const { data: { user } } = await sb.auth.getUser();
+            if (!user) return showMsg('Сначала войдите в кабинет!', '👤');
+
+            // 1. Проверяем баланс
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if (!prof || prof.balance < price) return showMsg('Недостаточно средств!<br>Пополните баланс в админке.', '💸');
+
+            // 2. Ищем свободный аккаунт в accounts_data
+            const { data: acc, error } = await sb.from('accounts_data')
+                .select('*')
+                .eq('product_name', prodName)
+                .eq('is_sold', false)
+                .limit(1)
+                .single();
+
+            if (error || !acc) return showMsg('Товар закончился!<br>CEO уже уведомлен.', '📦');
+
+            // 3. Процесс покупки
+            const newBal = prof.balance - price;
+            await sb.from('profiles').update({ balance: newBal }).eq('id', user.id);
+            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+
+            showMsg(`УСПЕШНАЯ ПОКУПКА!<br><br>Твои данные:<br><span class="text-blue-500 font-black select-all text-lg">${acc.data}</span>`, '🎉');
+            check(); // Обновить баланс в шапке
         }
 
         // Авторизация
-        async function authAction(type) {
+        async function auth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const btn = type === 'login' ? document.getElementById('login-btn') : document.getElementById('signup-btn');
-            
-            if (!email || !password) return alert("Заполни поля!");
-            
-            btn.innerText = "Ждите...";
-            btn.classList.add('opacity-50');
+            if(!email || !password) return showMsg('Заполни все поля!', '⚠️');
 
-            const { data, error } = type === 'login' 
+            const { error } = type === 'login' 
                 ? await sb.auth.signInWithPassword({ email, password })
                 : await sb.auth.signUp({ email, password });
 
-            if (error) {
-                alert("Ошибка: " + error.message);
-                btn.innerText = type === 'login' ? "ВОЙТИ" : "РЕГИСТРАЦИЯ";
-                btn.classList.remove('opacity-50');
-            } else {
-                if (type === 'signup') alert("Регистрация успешна! Если ты отключила подтверждение почты в Supabase — просто нажми ВОЙТИ.");
-                else location.reload();
+            if (error) showMsg(error.message, '❌');
+            else {
+                if(type === 'signup') showMsg('Регистрация успешна!<br>Теперь нажмите ВОЙТИ.', '✅');
+                else { closeModal('auth-modal'); location.reload(); }
             }
         }
 
-        // Восстановление пароля
-        async function resetPassword() {
+        async function resetPass() {
             const email = document.getElementById('email').value;
-            if (!email) return alert("Введите Email в поле выше!");
-            
+            if(!email) return showMsg('Введите Email!', '📧');
             const { error } = await sb.auth.resetPasswordForEmail(email);
-            if (error) alert(error.message);
-            else alert("Инструкция по сбросу пароля отправлена на твою почту!");
+            showMsg(error ? error.message : 'Инструкция на почте!', error ? '❌' : '📧');
         }
 
-        // Проверка юзера
         async function check() {
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
-                document.getElementById('user-info').innerHTML = `
-                    <div class="flex flex-col items-end">
-                        <span class="text-blue-500 font-black text-sm">0 ₽</span>
-                        <span class="text-[9px] text-gray-600">${user.email}</span>
-                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="text-[8px] text-red-800 uppercase">Выход</button>
-                    </div>
-                `;
+                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+                document.getElementById('user-ui').innerHTML = `
+                    <div class="flex flex-col items-end leading-none">
+                        <span class="text-blue-500 font-black text-sm">${prof?.balance || 0} ₽</span>
+                        <span class="text-[8px] opacity-40 mt-1">${user.email}</span>
+                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="text-[7px] text-red-500 font-bold uppercase mt-1 tracking-widest">Выход</button>
+                    </div>`;
             }
         }
 
-        fetchProducts();
+        load();
         check();
     </script>
 </body>
