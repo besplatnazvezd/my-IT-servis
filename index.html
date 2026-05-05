@@ -3,137 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-MILLIONAIRE | SHOP</title>
+    <title>TG-STORE | PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #050505; color: white; scroll-behavior: smooth; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        input::placeholder { color: rgba(255, 255, 255, 0.2); }
+        body { background-color: #050505; color: white; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .btn-blue { background: #2563eb; transition: all 0.2s; }
+        .btn-blue:active { transform: scale(0.95); opacity: 0.8; }
+        input { border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.2s; }
+        input:focus { border-color: #2563eb; outline: none; }
     </style>
 </head>
-<body class="font-sans min-h-screen">
+<body class="font-sans">
 
     <!-- Навигация -->
-    <nav class="flex justify-between items-center p-4 max-w-6xl mx-auto sticky top-0 bg-[#050505]/80 backdrop-blur-lg z-50">
-        <div class="text-xl font-black bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent uppercase tracking-tighter">
-            TG-MILLIONAIRE
-        </div>
-        <div id="auth-section">
-            <button onclick="showAuthModal()" class="glass px-4 py-2 rounded-xl text-sm font-bold">ВОЙТИ</button>
+    <nav class="flex justify-between items-center p-4 sticky top-0 bg-[#050505]/90 backdrop-blur-md z-50 border-b border-white/5">
+        <div class="text-xl font-black text-blue-500 uppercase tracking-tighter">TG-MILLIONAIRE</div>
+        <div id="user-info" class="text-right">
+            <button onclick="openModal('auth-modal')" class="glass px-4 py-1.5 rounded-lg text-sm font-bold">ВОЙТИ</button>
         </div>
     </nav>
 
-    <header class="text-center py-6 px-4">
-        <h1 class="text-3xl font-black uppercase tracking-tighter italic text-blue-500 mb-6">Shop Online</h1>
+    <!-- Поиск и Заголовок -->
+    <div class="p-4 max-w-2xl mx-auto">
+        <input type="text" id="search" oninput="filterItems()" placeholder="Поиск товара..." 
+               class="w-full bg-white/5 p-3 rounded-xl text-sm mb-6">
         
-        <!-- СТРОКА ПОИСКА -->
-        <div class="max-w-md mx-auto relative">
-            <input type="text" id="search-input" oninput="filterProducts()" placeholder="Поиск аккаунтов (например: США)..." 
-                class="w-full bg-white/5 border border-white/10 p-3 px-5 rounded-2xl outline-none focus:border-blue-500 transition text-sm">
+        <div id="products-grid" class="grid grid-cols-1 gap-3">
+            <div class="text-center text-gray-500 py-10">Загрузка витрины...</div>
         </div>
-    </header>
+    </div>
 
-    <!-- Сетка товаров (Компактная) -->
-    <section class="max-w-4xl mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 gap-3" id="products-list">
-            <p class="text-gray-600 text-center py-10">Загрузка витрины...</p>
-        </div>
-    </section>
-
-    <!-- Окно входа -->
+    <!-- МОДАЛКА: ВХОД / РЕГИСТРАЦИЯ -->
     <div id="auth-modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-4 z-[100]">
-        <div class="glass p-8 rounded-[30px] max-w-sm w-full border-blue-500/20">
-            <h2 class="text-xl font-bold mb-6 text-center">Личный кабинет</h2>
-            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-3 text-white outline-none">
-                        <input id="auth-password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl mb-6 text-white outline-none">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-3 rounded-xl font-bold mb-2">ВОЙТИ</button>
-            <button onclick="handleSignUp()" class="w-full border border-white/10 p-3 rounded-xl font-bold text-sm mb-4">РЕГИСТРАЦИЯ</button>
-            <button onclick="closeAuthModal()" class="w-full text-gray-500 text-xs">Закрыть</button>
+        <div class="glass p-6 rounded-3xl w-full max-w-sm">
+            <h2 id="auth-title" class="text-xl font-bold mb-6 text-center text-blue-400">Личный кабинет</h2>
+            
+            <input id="email" type="email" placeholder="Email" class="w-full bg-white/5 p-3 rounded-xl mb-3">
+            <input id="password" type="password" placeholder="Пароль" class="w-full bg-white/5 p-3 rounded-xl mb-4">
+            
+            <div class="space-y-3">
+                <button id="login-btn" onclick="authAction('login')" class="w-full btn-blue p-3 rounded-xl font-bold">ВОЙТИ</button>
+                                <button id="signup-btn" onclick="authAction('signup')" class="w-full bg-white/5 p-3 rounded-xl font-bold text-sm">РЕГИСТРАЦИЯ</button>
+                <button onclick="resetPassword()" class="w-full text-gray-500 text-xs py-2">Забыли пароль?</button>
+            </div>
+            
+            <button onclick="closeModal('auth-modal')" class="w-full mt-4 text-gray-600 text-sm italic">Закрыть</button>
         </div>
     </div>
 
     <script>
-        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
-        const SB_KEY = 'ТВОЙ_ANON_KEY';
+        // --- КЛЮЧИ (АВТО-ОЧИСТКА ОТ ПРОБЕЛОВ) ---
+        const SB_URL = 'ВСТАВЬ_СЮДА_URL'.trim();
+        const SB_KEY = 'ВСТАВЬ_СЮДА_KEY'.trim();
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let allProducts = []; // Тут будем хранить товары для поиска
+        let allItems = [];
 
-        function showAuthModal() { document.getElementById('auth-modal').classList.replace('hidden', 'flex'); }
-        function closeAuthModal() { document.getElementById('auth-modal').classList.replace('flex', 'hidden'); }
+        // Управление модалками
+        function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
+        function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-        async function loadProducts() {
-            const { data, error } = await sb.from('products').select('*');
-            if (error) return alert("Ошибка: " + error.message);
-            
-            allProducts = data;
-            renderProducts(allProducts);
+        // Загрузка товаров
+        async function fetchProducts() {
+            try {
+                const { data, error } = await sb.from('products').select('*');
+                if (error) throw error;
+                allItems = data;
+                render(allItems);
+            } catch (e) {
+                document.getElementById('products-grid').innerHTML = `<div class="text-red-500 text-xs">Ошибка базы: ${e.message}</div>`;
+            }
         }
 
-        // Функция отрисовки товаров
-        function renderProducts(items) {
-            const list = document.getElementById('products-list');
-            if (items.length === 0) {
-                list.innerHTML = '<p class="text-gray-600 text-center py-10">Ничего не найдено</p>';
-                return;
-            }
-
-            list.innerHTML = items.map(p => `
-                <div class="glass p-4 rounded-2xl flex items-center justify-between hover:border-blue-500/30 transition group">
-                    <div class="flex items-center gap-4">
-                        <div class="text-3xl bg-white/5 w-12 h-12 flex items-center justify-center rounded-xl group-hover:scale-110 transition">📦</div>
+        function render(items) {
+            const grid = document.getElementById('products-grid');
+            if (!items.length) { grid.innerHTML = '<div class="text-gray-600 text-center">Товары не найдены</div>'; return; }
+            
+            grid.innerHTML = items.map(p => `
+                <div class="glass p-3 rounded-2xl flex items-center justify-between border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="text-2xl bg-white/5 w-10 h-10 flex items-center justify-center rounded-lg">📦</div>
                         <div>
-                            <h3 class="font-bold text-sm uppercase">${p.name}</h3>
-                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">${p.description || 'Аккаунты'}</p>
-                                                    </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="font-black text-lg">${p.price || 0} ₽</span>
-                        <button onclick="alert('Пополните баланс!')" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-xs font-bold transition">BUY</button>
+                            <div class="font-bold text-sm uppercase">${p.name}</div>
+                            <div class="text-[10px] text-gray-500 uppercase">${p.description || 'Аккаунт'}</div>
+                        </div>
+                                </div>
+                                                    <div class="flex items-center gap-3">
+                        <div class="font-black text-blue-400">${p.price}₽</div>
+                        <button onclick="alert('Пополните баланс!')" class="btn-blue px-4 py-1.5 rounded-lg text-xs font-bold uppercase italic">Buy</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Логика поиска
-        function filterProducts() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allProducts.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                (p.description && p.description.toLowerCase().includes(query))
-            );
-            renderProducts(filtered);
+        function filterItems() {
+            const q = document.getElementById('search').value.toLowerCase();
+            render(allItems.filter(i => i.name.toLowerCase().includes(q)));
         }
 
-        async function checkUser() {
+        // Авторизация
+        async function authAction(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = type === 'login' ? document.getElementById('login-btn') : document.getElementById('signup-btn');
+            
+            if (!email || !password) return alert("Заполни поля!");
+            
+            btn.innerText = "Ждите...";
+            btn.classList.add('opacity-50');
+
+            const { data, error } = type === 'login' 
+                ? await sb.auth.signInWithPassword({ email, password })
+                : await sb.auth.signUp({ email, password });
+
+            if (error) {
+                alert("Ошибка: " + error.message);
+                btn.innerText = type === 'login' ? "ВОЙТИ" : "РЕГИСТРАЦИЯ";
+                btn.classList.remove('opacity-50');
+            } else {
+                if (type === 'signup') alert("Регистрация успешна! Если ты отключила подтверждение почты в Supabase — просто нажми ВОЙТИ.");
+                else location.reload();
+            }
+        }
+
+        // Восстановление пароля
+        async function resetPassword() {
+            const email = document.getElementById('email').value;
+            if (!email) return alert("Введите Email в поле выше!");
+            
+            const { error } = await sb.auth.resetPasswordForEmail(email);
+            if (error) alert(error.message);
+            else alert("Инструкция по сбросу пароля отправлена на твою почту!");
+        }
+
+        // Проверка юзера
+        async function check() {
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
-                document.getElementById('auth-section').innerHTML = `
-                    <div class="text-right">
-                        <div class="text-blue-400 font-black text-sm">0 ₽</div>
-                        <div class="text-[9px] text-gray-600">${user.email}</div>
+                document.getElementById('user-info').innerHTML = `
+                    <div class="flex flex-col items-end">
+                        <span class="text-blue-500 font-black text-sm">0 ₽</span>
+                        <span class="text-[9px] text-gray-600">${user.email}</span>
+                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="text-[8px] text-red-800 uppercase">Выход</button>
                     </div>
                 `;
             }
         }
 
-        async function handleLogin() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message); else location.reload();
-        }
-
-        async function handleSignUp() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const { error } = await sb.auth.signUp({ email, password });
-            if (error) alert(error.message); else alert("Успешно! Теперь войдите.");
-        }
-
-        loadProducts();
-        checkUser();
+        fetchProducts();
+        check();
     </script>
 </body>
 </html>
