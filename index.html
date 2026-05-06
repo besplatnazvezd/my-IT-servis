@@ -3,197 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-MILLIONAIRE | PREMIUM</title>
+    <title>TG-STORE | PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: #111111; --text: #ffffff; --accent: #2563eb; --border: rgba(255,255,255,0.1); }
-        .light-theme { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --border: rgba(15,23,42,0.1); }
+        :root { --bg: #080808; --card: #121212; --text: #ffffff; --accent: #3b82f6; }
+        .light-theme { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; }
         
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; }
-        .glass { background: var(--card); border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .btn-blue { background: var(--accent); color: white; transition: 0.2s; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
-        .btn-blue:active { transform: scale(0.95); }
-        input { background: rgba(128,128,128,0.1); border: 1px solid var(--border); color: var(--text); }
-        .neon-text { text-shadow: 0 0 15px rgba(37,99,235,0.5); }
-        
-        /* Исправление видимости в модалках */
-        .modal-title { color: var(--text) !important; font-weight: 900; }
-        .modal-bg { background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; font-family: 'Inter', sans-serif; }
+        .glass { background: var(--card); border: 1px solid rgba(128,128,128,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .input-style { background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.2); color: var(--text); }
+        .btn-main { background: var(--accent); color: white; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.96); }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <!-- Шапка -->
-    <nav class="flex justify-between items-center p-6 sticky top-0 bg-inherit z-50 border-b border-[var(--border)]">
+    <nav class="flex justify-between items-center p-5 sticky top-0 bg-inherit z-50 border-b border-white/5">
         <div class="flex items-center gap-4">
-            <div class="text-2xl font-black text-blue-600 italic tracking-tighter neon-text">TG-MILLIONAIRE</div>
-            <button onclick="toggleTheme()" class="text-[10px] glass px-3 py-1 rounded-full uppercase font-bold tracking-widest">Тема</button>
+            <span class="text-xl font-black tracking-tighter text-blue-500 uppercase italic">TG-MILLIONAIRE</span>
+            <button onclick="toggleTheme()" class="text-[10px] glass px-3 py-1 rounded-full border">ТЕМA</button>
         </div>
-        <div id="user-ui">
-            <button onclick="openModal('auth-modal')" class="btn-blue px-6 py-2 rounded-xl text-xs font-black uppercase">Войти</button>
+        <div id="user-info">
+            <button onclick="openModal('auth-modal')" class="btn-main px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">Войти</button>
         </div>
     </nav>
 
-    <!-- Поиск -->
-    <header class="p-6 max-w-2xl mx-auto">
-        <h1 class="text-5xl font-black text-center mb-10 italic uppercase tracking-tighter leading-none">Shop<br><span class="text-blue-600">Online</span></h1>
-        <input type="text" id="search" oninput="filterItems()" placeholder="Поиск аккаунтов..."
-                           class="w-full p-4 rounded-2xl outline-none focus:ring-2 ring-blue-600 transition shadow-inner">
-    </header>
+    <main class="max-w-2xl mx-auto p-4">
+        <h1 class="text-4xl font-black text-center my-8 italic uppercase tracking-tighter">Shop Online</h1>
+        
+        <input type="text" id="search" oninput="filterProducts()" placeholder="Поиск товара..." 
+               class="w-full input-style p-4 rounded-2xl mb-8 outline-none focus:ring-2 ring-blue-500/50">
 
-    <!-- Витрина -->
-    <section class="p-6 max-w-2xl mx-auto">
-        <div id="products-grid" class="grid gap-3">
-            <div class="text-center opacity-30 py-20 italic">Загрузка товаров...</div>
+        <div id="products-list" class="grid gap-3">
+            <div class="text-center opacity-20 py-20 italic">Загрузка витрины...</div>
         </div>
-    </section>
+    </main>
 
-    <!-- МОДАЛКА ВХОДА (ЛОГИН/ПАРОЛЬ) -->
-    <div id="auth-modal" class="fixed inset-0 modal-bg hidden items-center justify-center p-6 z-[100]">
-        <div class="glass p-10 rounded-[40px] w-full max-w-sm relative">
-            <h2 class="text-3xl modal-title text-center mb-8 uppercase italic">Кабинет</h2>
-            <div class="space-y-4">
-                <input id="email" type="email" placeholder="Email" class="w-full p-4 rounded-2xl outline-none">
-                <input id="password" type="password" placeholder="Пароль" class="w-full p-4 rounded-2xl outline-none">
-                <button onclick="auth('login')" class="w-full btn-blue p-4 rounded-2xl font-black uppercase tracking-widest">Войти</button>
-                <button onclick="auth('signup')" class="w-full glass p-4 rounded-2xl font-bold uppercase text-[10px] opacity-60">Регистрация</button>
-                <button onclick="openModal('voucher-modal')" class="w-full text-blue-500 text-[10px] font-black uppercase tracking-tighter">Активировать Ваучер</button>
+    <!-- МОДАЛКА ВХОДА -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+        <div class="glass p-8 rounded-[35px] w-full max-w-sm relative">
+            <h2 class="text-2xl font-bold mb-6 text-center">КАБИНЕТ</h2>
+                        <div class="space-y-3">
+                <input id="email" type="email" placeholder="Email" class="w-full input-style p-4 rounded-xl outline-none">
+                <input id="password" type="password" placeholder="Пароль" class="w-full input-style p-4 rounded-xl outline-none">
+                <button onclick="handleAuth('login')" class="w-full btn-main p-4 rounded-xl font-bold uppercase text-sm">Войти</button>
+                <button onclick="handleAuth('signup')" class="w-full border border-blue-500/30 p-4 rounded-xl font-bold uppercase text-[10px] opacity-70">Создать аккаунт</button>
+                <button onclick="openModal('voucher-modal')" class="w-full text-blue-500 text-[10px] font-bold uppercase tracking-widest pt-2">У меня есть ваучер</button>
             </div>
-            <button onclick="closeModal('auth-modal')" class="absolute top-6 right-6 opacity-20 text-xl">✕</button>
+            <button onclick="closeModal('auth-modal')" class="absolute top-6 right-6 opacity-30 text-xl">✕</button>
         </div>
     </div>
 
     <!-- МОДАЛКА ВАУЧЕРА -->
-    <div id="voucher-modal" class="fixed inset-0 modal-bg hidden items-center justify-center p-6 z-[110]">
-        <div class="glass p-10 rounded-[40px] w-full max-w-sm text-center">
-            <h2 class="text-2xl modal-title mb-4 uppercase italic">Ваучер</h2>
-            <p class="text-[10px] opacity-50 mb-6 uppercase">Введите секретный код для пополнения</p>
-            <input id="v-code" type="text" placeholder="XXXX-XXXX" class="w-full p-4 rounded-2xl mb-6 text-center font-mono text-xl uppercase">
-            <button onclick="useVoucher()" class="w-full btn-blue p-4 rounded-2xl font-black uppercase">Пополнить</button>
-                        <button onclick="closeModal('voucher-modal')" class="mt-4 text-xs opacity-30 uppercase font-bold">Назад</button>
+    <div id="voucher-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[110] p-4">
+        <div class="glass p-8 rounded-[35px] w-full max-w-sm text-center">
+            <h2 class="text-xl font-bold mb-4">АКТИВАЦИЯ ВАУЧЕРА</h2>
+            <input id="v-code" type="text" placeholder="Введите код" class="w-full input-style p-4 rounded-xl mb-4 text-center font-mono">
+            <button onclick="useVoucher()" class="w-full btn-main p-4 rounded-xl font-bold mb-4">ПОПОЛНИТЬ БАЛАНС</button>
+            <button onclick="closeModal('voucher-modal')" class="text-xs opacity-40 uppercase">Назад</button>
         </div>
     </div>
 
-    <!-- КРАСИВОЕ ОКНО ВЫДАЧИ -->
-    <div id="msg-modal" class="fixed inset-0 modal-bg hidden items-center justify-center p-6 z-[200]">
-        <div class="glass p-10 rounded-[40px] w-full max-w-sm text-center border-blue-600/50">
-            <div id="msg-icon" class="text-6xl mb-6">💎</div>
-            <div id="msg-text" class="text-sm font-bold leading-relaxed mb-8 modal-title"></div>
-            <button onclick="closeModal('msg-modal')" class="w-full btn-blue p-4 rounded-2xl font-black uppercase">ОК</button>
+    <!-- ОКНО УВЕДОМЛЕНИЙ -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[200] p-4">
+        <div class="glass p-8 rounded-[40px] w-full max-w-xs text-center border-blue-500">
+            <div id="msg-icon" class="text-5xl mb-4">✅</div>
+            <div id="msg-text" class="font-medium text-sm mb-6"></div>
+            <button onclick="closeModal('msg-modal')" class="w-full btn-main p-4 rounded-2xl font-bold uppercase text-xs">Принято</button>
         </div>
     </div>
 
     <script>
-        // --- ТВОИ КЛЮЧИ ---
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
-        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
-        const TG_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM'.trim();
-        const TG_CHAT_ID = '7727345054'.trim();
-        
+                const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
+        const TG_BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
+        const TG_CHAT_ID = '7727345054';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let allItems = [];
+
+        let allProducts = [];
 
         function toggleTheme() { document.body.classList.toggle('light-theme'); }
         function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-        function showResult(text, icon = '✅') {
+        function alertMsg(text, icon = '💡') {
             document.getElementById('msg-text').innerHTML = text;
             document.getElementById('msg-icon').innerText = icon;
             openModal('msg-modal');
         }
 
-        // Загрузка
-        async function fetchProducts() {
+        async function loadProducts() {
             const { data, error } = await sb.from('products').select('*');
-            if (error) return;
-            allItems = data;
+            if (error) return console.error(error);
+            allProducts = data;
             render(data);
         }
 
         function render(items) {
-            const grid = document.getElementById('products-grid');
-            grid.innerHTML = items.map(p => `
-                <div class="glass p-5 rounded-[30px] flex items-center justify-between hover:scale-[1.01] transition duration-300">
+            const list = document.getElementById('products-list');
+            list.innerHTML = items.map(p => `
+                <div class="glass p-5 rounded-2xl flex items-center justify-between hover:border-blue-500/50 transition cursor-default">
                     <div class="flex items-center gap-4">
-                        <div class="text-3xl bg-blue-600/10 w-14 h-14 flex items-center justify-center rounded-2xl">📦</div>
+                        <div class="text-3xl bg-blue-500/10 w-14 h-14 flex items-center justify-center rounded-2xl">📦</div>
                         <div>
-                            <div class="font-black text-sm uppercase italic">${p.name}</div>
-                            <div class="text-[9px] opacity-40 uppercase font-bold tracking-widest">${p.description || 'Premium Account'}</div>
+                  <div class="font-bold text-base uppercase">${p.name}</div>
+                            <div class="text-[10px] opacity-40 uppercase font-black">${p.description || 'Premium'}</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
-                        <div class="text-xl font-black text-blue-600">${p.price}₽</div>
-                        <button onclick="buy('${p.name}', ${p.price})" class="btn-blue px-6 py-3 rounded-2xl text-[10px] font-black uppercase italic">Buy</button>
+                        <div class="text-xl font-black text-blue-500">${p.price}₽</div>
+                        <button onclick="buy('${p.name}', ${p.price})" class="btn-main px-6 py-2.5 rounded-xl text-xs font-black uppercase italic">Buy</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function filterItems() {
+        function filterProducts() {
             const q = document.getElementById('search').value.toLowerCase();
-            render(allItems.filter(i => i.name.toLowerCase().includes(q)));
+            render(allProducts.filter(p => p.name.toLowerCase().includes(q)));
         }
 
-        // АВТОРИЗАЦИЯ
-        async function auth(type) {
+        async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const { data, error } = type === 'login' 
                 ? await sb.auth.signInWithPassword({ email, password })
                 : await sb.auth.signUp({ email, password });
 
-            if (error) showResult(error.message, '❌');
+            if (error) alertMsg(error.message, '❌');
             else {
-                if(type === 'signup') showResult('Успешно! Теперь нажмите ВОЙТИ.', '🎉');
+                if(type === 'signup') alertMsg('Успешно! Теперь войдите.', '✅');
                 else location.reload();
             }
         }
 
-        // ВАУЧЕРЫ
         async function useVoucher() {
-            const code = document.getElementById('v-code').value.trim();
+            const code = document.getElementById('v-code').value;
             const { data: { user } } = await sb.auth.getUser();
-            if(!user) return showResult('Сначала войдите!', '👤');
+            if(!user) return alertMsg('Войдите в аккаунт!', '👤');
 
-            const { data: v, error } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
-            
-            if(!v) return showResult('Ваучер не найден или уже активирован', '❌');
+            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
+            if(!v) return alertMsg('Ваучер не найден!', '❌');
 
             const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            const newBal = (prof.balance || 0) + v.value;
-
-            await sb.from('profiles').update({ balance: newBal }).eq('id', user.id);
+            await sb.from('profiles').update({ balance: (prof.balance || 0) + v.value }).eq('id', user.id);
             await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
 
-            showResult(`УСПЕШНО 😉!<br>Баланс пополнен на ${v.value}₽`, '💰');
-            checkUser();
+            alertMsg(`Баланс пополнен на ${v.value}₽!`, '💰');
             closeModal('voucher-modal');
+            checkUser();
         }
 
-        // ПОКУПКА И ВЫДАЧА
-        async function buy(pName, price) {
+        async function buy(name, price) {
             const { data: { user } } = await sb.auth.getUser();
             if(!user) return openModal('auth-modal');
 
-            const { data: prof } = await sb.from('profiles').select('balance, email').eq('id', user.id).single();
-            if(prof.balance < price) return showResult('Недостаточно средств!', '💸'\ 
-);
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if(prof.balance < price) return alertMsg('Недостаточно средств!', '💸');
 
-            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', pName).eq('is_sold', false).limit(1).single();
-            if(!acc) return showResult('Товар закончился!', '⏳');
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
+            if(!acc) return alertMsg('Товар закончился!', '⏳');
 
             await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
             await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
 
-            const msg = `УСПЕШНО 😉! Сейчас в бота и на почту придет товар:<br><br><span class="text-blue-500 font-black">${acc.data}</span>`;
-            showResult(msg, '🎉');
-
-            // ОТПРАВКА В ТЕЛЕГРАМ БОТА
-            const tgText = `✅ НОВАЯ ПОКУПКА\nТовар: ${pName}\nДанные: ${acc.data}\nПокупатель: ${prof.email}`;
-            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(tgText)}`);
+            // ТУТ БУДЕТ ВЫДАЧА В БОТА
+            const text = `УСПЕШНО 😉! Твой товар: ${acc.data}`;
+            alertMsg(text, '🎉');
+            
+            // Отправка в ТГ (пример запроса)
+            fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent('Покупка: ' + name + '\nДанные: ' + acc.data)}`);
             
             checkUser();
         }
@@ -202,18 +182,17 @@
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
                 const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('user-ui').innerHTML = `
-                    <div class="text-right leading-none">
-                        <div class="text-blue-600 font-black text-lg">${prof?.balance || 0} ₽</div>
-                        <div class="text-[8px] opacity-40 uppercase mt-1 font-bold">${user.email}</div>
-                        <button onclick="sb.auth.signOut().then(() => location.reload())" class="text-[7px] text-red-500 font-black uppercase mt-2 border-b border-red-500/20">Выход</button>
+                document.getElementById('user-info').innerHTML = `
+                    <div class="text-right">
+                        <div class="text-blue-500 font-black text-sm">${prof?.balance || 0} ₽</div>
+                        <div class="text-[9px] opacity-40">${user.email}</div>
                     </div>
                 `;
             }
         }
 
-        fetchProducts();
+        loadProducts();
         checkUser();
     </script>
 </body>
-</html>
+</html>      
