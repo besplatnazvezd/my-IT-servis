@@ -9,36 +9,45 @@
     <style>
         body { background: #0a0a0a; color: white; font-family: sans-serif; }
         .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; }
-        input, textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 15px; outline: none; width: 100%; margin-bottom: 10px; }
+        input, textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 15px; color: white; outline: none; width: 100%; margin-bottom: 10px; }
         button { transition: 0.2s; }
+        button:active { transform: scale(0.98); }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 min-h-screen">
 
-    <div class="max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-2xl font-black text-blue-500 italic">ADMIN PANEL</h1>
-            <a href="index.html" class="text-sm text-gray-500 underline">На сайт</a>
+    <div class="max-w-2xl mx-auto pb-20">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-xl font-black text-blue-500 italic">CEO PANEL</h1>
+            <a href="index.html" class="text-xs opacity-50 underline">На витрину</a>
         </div>
 
-        <!-- СЕКЦИЯ 1: ДОБАВИТЬ ТОВАР -->
-        <div class="card mb-8">
-            <h2 class="text-lg font-bold mb-4">➕ Новый товар</h2>
-            <input id="p-name" type="text" placeholder="Название (например: США 🇺🇸)">
+        <!-- 1. ТОВАРЫ -->
+        <div class="card mb-6">
+            <h2 class="text-lg font-bold mb-4">📦 Новый товар</h2>
+            <input id="p-name" type="text" placeholder="Имя (США 🇺🇸)">
             <input id="p-desc" type="text" placeholder="Описание">
-            <input id="p-price" type="number" placeholder="Цена (руб)">
-            <button onclick="addProduct()" class="w-full bg-blue-600 p-3 rounded-xl font-bold mt-2">ОПУБЛИКОВАТЬ</button>
+            <input id="p-price" type="number" placeholder="Цена">
+            <button onclick="addProduct()" class="w-full bg-blue-600 p-3 rounded-xl font-bold">ОПУБЛИКОВАТЬ</button>
         </div>
 
-        <!-- СЕКЦИЯ 2: СТОК -->
-        <div class="card mb-8">
+        <!-- 2. СТОК (АККАУНТЫ) -->
+        <div class="card mb-6">
             <h2 class="text-lg font-bold mb-4">📥 Загрузить аккаунты</h2>
-            <input id="stock-name" type="text" placeholder="Название товара (точное совпадение)">
+            <input id="stock-name" type="text" placeholder="Имя товара (США 🇺🇸)">
             <textarea id="stock-data" placeholder="логин:пароль (каждый с новой строки)"></textarea>
             <button onclick="uploadStock()" class="w-full bg-purple-600 p-3 rounded-xl font-bold">ЗАГРУЗИТЬ В БАЗУ</button>
         </div>
 
-        <!-- СЕКЦИЯ 3: ЮЗЕРЫ -->
+        <!-- 3. ВАУЧЕРЫ -->
+        <div class="card mb-6">
+            <h2 class="text-lg font-bold mb-4">🎁 Создать ваучер</h2>
+            <input id="voucher-code" type="text" placeholder="Код (например: FREE100)">
+            <input id="voucher-value" type="number" placeholder="Сумма (например: 100)">
+                        <button onclick="createVoucher()" class="w-full bg-pink-600 p-3 rounded-xl font-bold">СОЗДАТЬ ВАУЧЕР</button>
+        </div>
+
+        <!-- 4. ЮЗЕРЫ -->
         <div class="card">
             <h2 class="text-lg font-bold mb-4">👥 Балансы клиентов</h2>
             <div id="users-list" class="space-y-3"></div>
@@ -46,14 +55,15 @@
     </div>
 
     <script>
+        // КЛЮЧИ (ВСТАВЬ СВОИ)
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
+        const ADMIN_PASSWORD = 'derty456765@'; // <- Придумай сложный пароль!
         const sb = supabase.createClient(SB_URL, SB_KEY);
-                const ADMIN_PASSWORD = 'derty456765@'; // <- Придумай сложный пароль!
 
         // Проверка админа
         async function checkAdmin() {
-            const adminPass = prompt('Введите пароль администратора:');
+            const adminPass = prompt('Хм, жду пароль:');
             if (adminPass !== ADMIN_PASSWORD) {
                 alert('Неверный пароль!');
                 window.location.href = 'index.html'; // Перенаправить на главную
@@ -71,7 +81,7 @@
 
         async function uploadStock() {
             const name = document.getElementById('stock-name').value;
-            const rawData = document.getElementById('stock-data').value.split('\n');
+            const rawData = document.getElementById('stock-data').value.split('n');
             const rows = rawData.filter(l => l.trim() !== '').map(l => ({
                 product_name: name,
                 data: l.trim(),
@@ -81,26 +91,43 @@
             if(error) alert(error.message); else alert("Загружено: " + rows.length);
         }
 
+        async function createVoucher() {
+            const code = document.getElementById('voucher-code').value;
+            const value = document.getElementById('voucher-value').value;
+            if (!code || !value) return alert("Заполни код и сумму!");
+            const { error } = await sb.from('vouchers').insert([{ code, value, is_used: false }]);
+            if(error) alert(error.message); else alert("Ваучер создан!");
+        }
+
         async function loadUsers() {
             const { data } = await sb.from('profiles').select('*');
             const list = document.getElementById('users-list');
-            list.innerHTML = data.map(u => `
-                <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
+            list.innerHTML = data.map(u => 
+                <div class="flex items-center justify-between bg-white/5 p-4 rounded-2xl">
                     <div class="text-xs">
                         <div class="font-bold text-gray-300">${u.email}</div>
                         <div class="text-blue-400 font-black text-lg">${u.balance} ₽</div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="updateBalance('${u.id}', 100)" class="bg-green-600/20 text-green-500 p-2 rounded-lg text-[10px] font-bold">+100</button>
-                        <button onclick="updateBalance('${u.id}', -100)" class="bg-red-600/20 text-red-500 p-2 rounded-lg text-[10px] font-bold">-100</button>
+                        <button onclick="updateBal('${u.id}', 100)" class="bg-green-500/20 text-green-500 px-2 py-1 rounded-lg text-[10px] font-bold">+100</button>
+                        <button onclick="updateBal('${u.id}', -100)" class="bg-red-500/20 text-red-500 px-2 py-1 rounded-lg text-[10px] font-bold">-100</button>
                     </div>
                 </div>
-            `).join('');
+            ).join('');
         }
 
-        async function updateBalance(userId, amount) {
-            const { data: p } = await sb.from('profiles').select('balance').eq('id', userId).single();
-            await sb.from('profiles').update({ balance: (p.balance || 0) + amount }).eq('id', userId);
+        async function updateBal(id, amt) {
+            const { data: p } = await sb.from('profiles').select('balance').eq('id', id).single();
+            await sb.from('profiles').update({ balance: (p.balance || 0) + amt }).eq('id', id);
+            loadUsers();
+        }
+
+        checkAdmin(); // Запускаем проверку при загрузке
+        loadUsers();
+    </script>
+</body>
+</html>
+balance: (p.balance || 0) + amt }).eq('id', id);
             loadUsers();
         }
 
