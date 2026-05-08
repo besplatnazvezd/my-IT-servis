@@ -3,196 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG-STORE | PREMIUM</title>
+    <title>BOSS STORE | PREMIUM DIGITAL SERVICE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;600;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #080808; --card: #121212; --text: #ffffff; --accent: #3b82f6; }
-        .light-theme { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; }
-        
-        body { background: var(--bg); color: var(--text); transition: 0.3s; font-family: 'Inter', sans-serif; }
-        .glass { background: var(--card); border: 1px solid rgba(128,128,128,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .input-style { background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.2); color: var(--text); }
-        .btn-main { background: var(--accent); color: white; transition: 0.2s; }
-        .btn-main:active { transform: scale(0.96); }
+        :root { --accent: #3b82f6; --bg: #050505; --card: #0f0f0f; }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .boss-font { font-family: 'Syncopate', sans-serif; }
+        .glass { background: var(--card); border: 1px solid rgba(255,255,255,0.05); }
+        .nav-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .btn-premium { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); transition: 0.3s; }
+        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59,130,246,0.3); }
+        .card-shimmer { position: relative; overflow: hidden; }
+        .card-shimmer::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); animation: shimmer 3s infinite; }
+        @keyframes shimmer { 100% { left: 200%; } }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="pb-20">
 
-    <nav class="flex justify-between items-center p-5 sticky top-0 bg-inherit z-50 border-b border-white/5">
-        <div class="flex items-center gap-4">
-            <span class="text-xl font-black tracking-tighter text-blue-500 uppercase italic">TG-MILLIONAIRE</span>
-            <button onclick="toggleTheme()" class="text-[10px] glass px-3 py-1 rounded-full border">ТЕМA</button>
-        </div>
-        <div id="user-info">
-            <button onclick="openModal('auth-modal')" class="btn-main px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">Войти</button>
+    <!-- HEADER -->
+    <nav class="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 p-4">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="boss-font text-xl font-bold tracking-tighter text-blue-500">BOSS STORE</div>
+            <div id="user-top-ui" onclick="switchTab('profile')" class="cursor-pointer bg-white/5 px-4 py-2 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
+                Войти
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-4">
-        <h1 class="text-4xl font-black text-center my-8 italic uppercase tracking-tighter">Shop Online</h1>
-        
-        <input type="text" id="search" oninput="filterProducts()" placeholder="Поиск товара..." 
-               class="w-full input-style p-4 rounded-2xl mb-8 outline-none focus:ring-2 ring-blue-500/50">
+    <!-- TABS -->
+    <div class="flex justify-center gap-8 mt-6 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+        <button onclick="switchTab('shop')" class="nav-tab pb-4 active" id="tab-shop">Магазин</button>
+                <button onclick="switchTab('news')" class="nav-tab pb-4" id="tab-news">Статьи</button>
+        <button onclick="switchTab('reviews')" class="nav-tab pb-4" id="tab-reviews">Отзывы</button>
+        <button onclick="switchTab('profile')" class="nav-tab pb-4" id="tab-profile">Профиль</button>
+    </div>
 
-        <div id="products-list" class="grid gap-3">
-            <div class="text-center opacity-20 py-20 italic">Загрузка витрины...</div>
+    <!-- CONTENT: SHOP -->
+    <section id="section-shop" class="tab-content p-6 max-w-4xl mx-auto">
+        <div class="mb-8">
+            <input type="text" id="search" oninput="filterItems()" placeholder="Поиск эксклюзива..." class="w-full bg-white/5 border border-white/10 p-5 rounded-[25px] outline-none focus:border-blue-500 transition">
         </div>
-    </main>
+        <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Товары -->
+        </div>
+    </section>
 
-    <!-- МОДАЛКА ВХОДА -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <div class="glass p-8 rounded-[35px] w-full max-w-sm relative">
-            <h2 class="text-2xl font-bold mb-6 text-center">КАБИНЕТ</h2>
-                        <div class="space-y-3">
-                <input id="email" type="email" placeholder="Email" class="w-full input-style p-4 rounded-xl outline-none">
-                <input id="password" type="password" placeholder="Пароль" class="w-full input-style p-4 rounded-xl outline-none">
-                <button onclick="handleAuth('login')" class="w-full btn-main p-4 rounded-xl font-bold uppercase text-sm">Войти</button>
-                <button onclick="handleAuth('signup')" class="w-full border border-blue-500/30 p-4 rounded-xl font-bold uppercase text-[10px] opacity-70">Создать аккаунт</button>
-                <button onclick="openModal('voucher-modal')" class="w-full text-blue-500 text-[10px] font-bold uppercase tracking-widest pt-2">У меня есть ваучер</button>
+    <!-- CONTENT: NEWS -->
+    <section id="section-news" class="tab-content hidden p-6 max-w-2xl mx-auto">
+        <h2 class="boss-font text-2xl mb-8">Блог BOSS</h2>
+        <div id="news-grid" class="space-y-6">
+            <!-- Статьи -->
+        </div>
+    </section>
+
+    <!-- CONTENT: REVIEWS -->
+    <section id="section-reviews" class="tab-content hidden p-6 max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="boss-font text-2xl">Отзывы</h2>
+            <button onclick="openModal('review-modal')" class="text-[10px] bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full border border-blue-500/20 font-bold uppercase italic">Оставить свой</button>
+        </div>
+        <div id="reviews-grid" class="space-y-4">
+            <!-- Отзывы -->
+        </div>
+    </section>
+
+    <!-- CONTENT: PROFILE -->
+    <section id="section-profile" class="tab-content hidden p-6 max-w-2xl mx-auto text-center">
+        <div id="profile-logged-out">
+            <div class="glass p-10 rounded-[40px] border-blue-500/20">
+                <h2 class="boss-font text-3xl mb-8 uppercase italic tracking-tighter leading-none">Вход в<br><span class="text-blue-500">систему</span></h2>
+                <input id="email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-4 outline-none">
+                <input id="password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-8 outline-none">
+                <button onclick="handleAuth('login')" class="w-full btn-premium p-5 rounded-2xl font-black uppercase italic tracking-widest text-sm mb-4">Авторизация</button>
+                <button onclick="handleAuth('signup')" class="opacity-40 text-[10px] font-bold uppercase tracking-widest">Регистрация</button>
             </div>
-            <button onclick="closeModal('auth-modal')" class="absolute top-6 right-6 opacity-30 text-xl">✕</button>
+        </div>
+        <div id="profile-logged-in" class="hidden">
+            <div class="glass p-8 rounded-[40px] mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-10 boss-font text-6xl">BOSS</div>
+                <div class="text-left">
+                    <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Ваш баланс</p>
+                    <h3 id="user-balance" class="text-5xl font-black text-blue-500 mb-6 italic tracking-tighter">0 ₽</h3>
+                    <button onclick="openModal('voucher-modal')" class="bg-blue-500/20 text-blue-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase italic border border-blue-500/30">Пополнить ваучером</button>
+                </div>
+            </div>
+            <h2 class="text-left boss-font text-sm mb-4 opacity-50 uppercase tracking-widest">История заказов</h2>
+            <div id="orders-history" class="space-y-2">
+                <!-- Заказы -->
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL: SUCCESS/GIFT -->
+    <div id="success-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden items-center justify-center p-6 z-[100]">
+        <div class="text-center max-w-sm">
+            <div id="success-icon" class="text-8xl mb-6">🎉</div>
+            <h2 class="boss-font text-2xl mb-4">УСПЕШНО 😉!</h2>
+            <div id="success-data" class="glass p-6 rounded-3xl mb-8 text-blue-400 font-mono text-lg break-all"></div>
+            <div class="flex flex-col gap-3">
+                <button id="gift-btn" class="w-full bg-purple-600 p-5 rounded-2xl font-black uppercase italic tracking-widest text-xs">Сделать подарком 🚀</button>
+                <button onclick="closeModal('success-modal')" class="opacity-40 text-xs font-bold uppercase">Закрыть</button>
+            </div>
         </div>
     </div>
 
-    <!-- МОДАЛКА ВАУЧЕРА -->
-    <div id="voucher-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[110] p-4">
-        <div class="glass p-8 rounded-[35px] w-full max-w-sm text-center">
-            <h2 class="text-xl font-bold mb-4">АКТИВАЦИЯ ВАУЧЕРА</h2>
-            <input id="v-code" type="text" placeholder="Введите код" class="w-full input-style p-4 rounded-xl mb-4 text-center font-mono">
-            <button onclick="useVoucher()" class="w-full btn-main p-4 rounded-xl font-bold mb-4">ПОПОЛНИТЬ БАЛАНС</button>
-            <button onclick="closeModal('voucher-modal')" class="text-xs opacity-40 uppercase">Назад</button>
-        </div>
-    </div>
-
-    <!-- ОКНО УВЕДОМЛЕНИЙ -->
-    <div id="msg-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[200] p-4">
-        <div class="glass p-8 rounded-[40px] w-full max-w-xs text-center border-blue-500">
-            <div id="msg-icon" class="text-5xl mb-4">✅</div>
-            <div id="msg-text" class="font-medium text-sm mb-6"></div>
-            <button onclick="closeModal('msg-modal')" class="w-full btn-main p-4 rounded-2xl font-bold uppercase text-xs">Принято</button>
-        </div>
-    </div>
+    <!-- ФОНОВЫЕ ЭФФЕКТЫ -->
+    <canvas id="gift-canvas" class="fixed inset-0 pointer-events-none z-[150]"></canvas>
 
     <script>
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
-                const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
-        const TG_BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
-        const TG_CHAT_ID = '7727345054';
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let allProducts = [];
+        let currentProducts = [];
 
-        function toggleTheme() { document.body.classList.toggle('light-theme'); }
+        // --- NAVIGATION ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if(tab === 'news') loadNews();
+            if(tab === 'reviews') loadReviews();
+            if(tab === 'profile') checkUser();
+        }
+
         function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-        function alertMsg(text, icon = '💡') {
-            document.getElementById('msg-text').innerHTML = text;
-            document.getElementById('msg-icon').innerText = icon;
-            openModal('msg-modal');
+        // --- SHOP LOGIC ---
+        async function loadShop() {
+            const { data } = await sb.from('products').select('*');
+            currentProducts = data || [];
+            renderShop(currentProducts);
         }
 
-        async function loadProducts() {
-            const { data, error } = await sb.from('products').select('*');
-            if (error) return console.error(error);
-            allProducts = data;
-            render(data);
-        }
-
-        function render(items) {
-            const list = document.getElementById('products-list');
-            list.innerHTML = items.map(p => `
-                <div class="glass p-5 rounded-2xl flex items-center justify-between hover:border-blue-500/50 transition cursor-default">
-                    <div class="flex items-center gap-4">
-                        <div class="text-3xl bg-blue-500/10 w-14 h-14 flex items-center justify-center rounded-2xl">📦</div>
-                        <div>
-                  <div class="font-bold text-base uppercase">${p.name}</div>
-                            <div class="text-[10px] opacity-40 uppercase font-black">${p.description || 'Premium'}</div>
+        function renderShop(items) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = items.map(p => `
+                <div class="glass p-6 rounded-[35px] card-shimmer flex flex-col justify-between group">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-[8px] font-black uppercase tracking-[0.3em] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">Digital Product</span>
+                            <span class="text-xl font-black italic text-blue-500">${p.price}₽</span>
                         </div>
+                        <h3 class="boss-font text-lg leading-none mb-2 uppercase italic">${p.name}</h3>
+                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">${p.description}</p>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="text-xl font-black text-blue-500">${p.price}₽</div>
-                        <button onclick="buy('${p.name}', ${p.price})" class="btn-main px-6 py-2.5 rounded-xl text-xs font-black uppercase italic">Buy</button>
-                    </div>
+                    <button onclick="buyItem('${p.name}', ${p.price})" class="btn-premium w-full py-4 rounded-2xl text-[10px] font-black uppercase italic tracking-widest">Приобрести</button>
                 </div>
             `).join('');
         }
 
-        function filterProducts() {
-            const q = document.getElementById('search').value.toLowerCase();
-            render(allProducts.filter(p => p.name.toLowerCase().includes(q)));
+        async function buyItem(name, price) {
+            const { data: { user } } = await sb.auth.getUser();
+            if(!user) return switchTab('profile');
+
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if(prof.balance < price) { alert('Недостаточно BOSS-койнов!'); return; }
+
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
+            if(!acc) { alert('Товар в дефиците!'); return; }
+
+            // Покупка
+            await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
+            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+            
+            // Сохраняем в историю (если есть таблица orders, если нет - пропустим)
+            
+            showSuccess(acc.data);
+        }
+
+        function showSuccess(data) {
+            document.getElementById('success-data').innerText = data;
+            document.getElementById('gift-btn').onclick = () => createGiftLink(data);
+            openModal('success-modal');
+        }
+
+        // --- GIFT SYSTEM ---
+        async function createGiftLink(data) {
+            const giftId = crypto.randomUUID();
+            const { error } = await sb.from('gifts').insert([{ id: giftId, data: data, is_opened: false }]);
+            if(!error) {
+                const link = `${window.location.origin}/gift.html?id=${giftId}`;
+                navigator.clipboard.writeText(link);
+                alert("Ссылка-подарок скопирована! Отправь другу 🚀");
+            }
+        }
+
+        // --- AUTH & PROFILE ---
+        async function checkUser() {
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) {
+                document.getElementById('profile-logged-out').classList.add('hidden');
+                document.getElementById('profile-logged-in').classList.remove('hidden');
+                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+                document.getElementById('user-balance').innerText = `${prof?.balance || 0} ₽`;
+                document.getElementById('user-top-ui').innerText = user.email.split('@')[0];
+            }
         }
 
         async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { data, error } = type === 'login' 
+            const { error } = type === 'login' 
                 ? await sb.auth.signInWithPassword({ email, password })
                 : await sb.auth.signUp({ email, password });
-
-            if (error) alertMsg(error.message, '❌');
-            else {
-                if(type === 'signup') alertMsg('Успешно! Теперь войдите.', '✅');
-                else location.reload();
-            }
+            if(error) alert(error.message); else location.reload();
         }
 
-        async function useVoucher() {
-            const code = document.getElementById('v-code').value;
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) return alertMsg('Войдите в аккаунт!', '👤');
-
-            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
-            if(!v) return alertMsg('Ваучер не найден!', '❌');
-
-            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            await sb.from('profiles').update({ balance: (prof.balance || 0) + v.value }).eq('id', user.id);
-            await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
-
-            alertMsg(`Баланс пополнен на ${v.value}₽!`, '💰');
-            closeModal('voucher-modal');
-            checkUser();
-        }
-
-        async function buy(name, price) {
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) return openModal('auth-modal');
-
-            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            if(prof.balance < price) return alertMsg('Недостаточно средств!', '💸');
-
-            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
-            if(!acc) return alertMsg('Товар закончился!', '⏳');
-
-            await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
-            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-
-            // ТУТ БУДЕТ ВЫДАЧА В БОТА
-            const text = `УСПЕШНО 😉! Твой товар: ${acc.data}`;
-            alertMsg(text, '🎉');
-            
-            // Отправка в ТГ (пример запроса)
-            fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent('Покупка: ' + name + '\nДанные: ' + acc.data)}`);
-            
-            checkUser();
-        }
-
-        async function checkUser() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (user) {
-                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('user-info').innerHTML = `
-                    <div class="text-right">
-                        <div class="text-blue-500 font-black text-sm">${prof?.balance || 0} ₽</div>
-                        <div class="text-[9px] opacity-40">${user.email}</div>
-                    </div>
-                `;
-            }
-        }
-
-        loadProducts();
+        // --- INITIAL LOAD ---
+        loadShop();
         checkUser();
     </script>
 </body>
-</html>      
+</html>
