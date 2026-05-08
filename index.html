@@ -7,205 +7,250 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #3b82f6; --bg: #050505; --card: #0f0f0f; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .boss-font { font-family: 'Syncopate', sans-serif; }
-        .glass { background: var(--card); border: 1px solid rgba(255,255,255,0.05); }
-        .nav-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-        .btn-premium { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); transition: 0.3s; }
-        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59,130,246,0.3); }
-        .card-shimmer { position: relative; overflow: hidden; }
-        .card-shimmer::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); animation: shimmer 3s infinite; }
-        @keyframes shimmer { 100% { left: 200%; } }
+        :root { --accent: #3b82f6; --bg: #030303; --card: rgba(20, 20, 20, 0.8); }
+        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; }
+        .boss-title { font-family: 'Syncopate', sans-serif; letter-spacing: -2px; }
+        
+        /* Эффект свечения для карточек */
+        .premium-card {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .premium-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Анимированный фон */
+        .bg-glow {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% -20%, #1e3a8a 0%, transparent 50%);
+            z-index: -1; pointer-events: none;
+        }
+
+        .nav-active { color: var(--accent); position: relative; }
+        .nav-active::after {
+            content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 2px;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
+        }
+
+        /* Кнопки */
+        .btn-boss {
+            background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+            text-transform: uppercase; font-weight: 900; letter-spacing: 1px;
+            transition: 0.3s;
+        }
+        .btn-boss:hover { filter: brightness(1.2); transform: scale(1.02); }
+
+        input, textarea {
+            background: rgba(255,255,255,0.03) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
     </style>
 </head>
-<body class="pb-20">
+<body class="min-h-screen">
+    <div class="bg-glow"></div>
 
-    <!-- HEADER -->
-    <nav class="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 p-4">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="boss-font text-xl font-bold tracking-tighter text-blue-500">BOSS STORE</div>
-            <div id="user-top-ui" onclick="switchTab('profile')" class="cursor-pointer bg-white/5 px-4 py-2 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
+    <!-- НАВИГАЦИЯ -->
+        <nav class="sticky top-0 z-[100] bg-black/60 backdrop-blur-lg border-b border-white/5 p-5">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="boss-title text-2xl font-bold text-white">BOSS<span class="text-blue-500">STORE</span></div>
+            <div class="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-widest opacity-60">
+                <button onclick="switchTab('shop')" id="n-shop" class="nav-active">Магазин</button>
+                <button onclick="switchTab('news')" id="n-news">Статьи</button>
+                <button onclick="switchTab('reviews')" id="n-reviews">Отзывы</button>
+                <button onclick="switchTab('profile')" id="n-profile">Профиль</button>
+            </div>
+            <div id="user-status" onclick="switchTab('profile')" class="cursor-pointer bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full text-[10px] font-bold text-blue-400 uppercase">
                 Войти
             </div>
         </div>
     </nav>
 
-    <!-- TABS -->
-    <div class="flex justify-center gap-8 mt-6 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-        <button onclick="switchTab('shop')" class="nav-tab pb-4 active" id="tab-shop">Магазин</button>
-                <button onclick="switchTab('news')" class="nav-tab pb-4" id="tab-news">Статьи</button>
-        <button onclick="switchTab('reviews')" class="nav-tab pb-4" id="tab-reviews">Отзывы</button>
-        <button onclick="switchTab('profile')" class="nav-tab pb-4" id="tab-profile">Профиль</button>
-    </div>
-
-    <!-- CONTENT: SHOP -->
-    <section id="section-shop" class="tab-content p-6 max-w-4xl mx-auto">
-        <div class="mb-8">
-            <input type="text" id="search" oninput="filterItems()" placeholder="Поиск эксклюзива..." class="w-full bg-white/5 border border-white/10 p-5 rounded-[25px] outline-none focus:border-blue-500 transition">
+    <!-- ТАБ: МАГАЗИН -->
+    <section id="tab-shop" class="tab-content max-w-6xl mx-auto p-6 mt-10">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <h1 class="boss-title text-5xl md:text-7xl uppercase italic">Exclusive<br><span class="text-blue-500">Access</span></h1>
+            <input type="text" id="search" oninput="searchItems()" placeholder="Поиск товара..." class="w-full md:w-80 p-4 rounded-2xl outline-none focus:border-blue-500">
         </div>
-        <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Товары -->
+        <div id="products-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="col-span-full text-center opacity-20 py-20 italic">Синхронизация с базой BOSS...</div>
         </div>
     </section>
 
-    <!-- CONTENT: NEWS -->
-    <section id="section-news" class="tab-content hidden p-6 max-w-2xl mx-auto">
-        <h2 class="boss-font text-2xl mb-8">Блог BOSS</h2>
-        <div id="news-grid" class="space-y-6">
-            <!-- Статьи -->
+    <!-- ТАБ: СТАТЬИ -->
+    <section id="tab-news" class="tab-content hidden max-w-4xl mx-auto p-6 mt-10">
+        <h2 class="boss-title text-4xl mb-10">Inside<br><span class="text-blue-500">Boss Mind</span></h2>
+        <div id="news-grid" class="grid gap-8">
+            <div class="opacity-20 italic text-center py-20">Статей пока нет...</div>
         </div>
     </section>
 
-    <!-- CONTENT: REVIEWS -->
-    <section id="section-reviews" class="tab-content hidden p-6 max-w-2xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="boss-font text-2xl">Отзывы</h2>
-            <button onclick="openModal('review-modal')" class="text-[10px] bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full border border-blue-500/20 font-bold uppercase italic">Оставить свой</button>
+    <!-- ТАБ: ОТЗЫВЫ -->
+        <section id="tab-reviews" class="tab-content hidden max-w-4xl mx-auto p-6 mt-10">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="boss-title text-4xl">Client<br><span class="text-blue-500">Feedback</span></h2>
+            <button onclick="openModal('modal-review')" class="btn-boss px-6 py-3 rounded-xl text-[10px]">Оставить отзыв</button>
         </div>
-        <div id="reviews-grid" class="space-y-4">
-            <!-- Отзывы -->
+        <div id="reviews-grid" class="grid gap-4"></div>
+    </section>
+
+    <!-- ТАБ: ПРОФИЛЬ -->
+    <section id="tab-profile" class="tab-content hidden max-w-2xl mx-auto p-6 mt-10">
+        <div id="auth-form" class="premium-card p-10 rounded-[40px] text-center border-blue-500/20">
+            <h2 class="boss-title text-3xl mb-8 uppercase italic text-blue-500">Private Terminal</h2>
+            <div class="space-y-4">
+                <input id="email" type="email" placeholder="Email" class="w-full p-4 rounded-xl outline-none">
+                <input id="password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl outline-none">
+                <button onclick="handleAuth('login')" class="w-full btn-boss p-5 rounded-xl text-sm">Авторизация</button>
+                <button onclick="handleAuth('signup')" class="opacity-30 text-[10px] font-bold uppercase mt-4">Создать новый аккаунт</button>
+            </div>
+        </div>
+        <div id="profile-data" class="hidden">
+            <div class="premium-card p-10 rounded-[40px] mb-6">
+               <p class="text-[10px] uppercase font-black opacity-40 mb-2">Boss Balance</p>
+                <h3 id="balance-val" class="text-6xl font-black italic text-blue-500 mb-8">0 ₽</h3>
+                <button onclick="openModal('modal-voucher')" class="btn-boss px-8 py-4 rounded-xl text-[10px]">Пополнить ваучером</button>
+            </div>
+            <h4 class="boss-title text-sm mb-4 opacity-40">История транзакций</h4>
+            <div id="orders-list" class="space-y-2 opacity-30 italic text-xs">Заказов пока нет.</div>
+            <button onclick="sb.auth.signOut().then(()=>location.reload())" class="mt-10 text-red-500 text-[10px] font-bold uppercase underline">Выйти из системы</button>
         </div>
     </section>
 
-    <!-- CONTENT: PROFILE -->
-    <section id="section-profile" class="tab-content hidden p-6 max-w-2xl mx-auto text-center">
-        <div id="profile-logged-out">
-            <div class="glass p-10 rounded-[40px] border-blue-500/20">
-                <h2 class="boss-font text-3xl mb-8 uppercase italic tracking-tighter leading-none">Вход в<br><span class="text-blue-500">систему</span></h2>
-                <input id="email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-4 outline-none">
-                <input id="password" type="password" placeholder="Пароль" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-8 outline-none">
-                <button onclick="handleAuth('login')" class="w-full btn-premium p-5 rounded-2xl font-black uppercase italic tracking-widest text-sm mb-4">Авторизация</button>
-                <button onclick="handleAuth('signup')" class="opacity-40 text-[10px] font-bold uppercase tracking-widest">Регистрация</button>
-            </div>
-        </div>
-        <div id="profile-logged-in" class="hidden">
-            <div class="glass p-8 rounded-[40px] mb-6 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-8 opacity-10 boss-font text-6xl">BOSS</div>
-                <div class="text-left">
-                    <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Ваш баланс</p>
-                    <h3 id="user-balance" class="text-5xl font-black text-blue-500 mb-6 italic tracking-tighter">0 ₽</h3>
-                    <button onclick="openModal('voucher-modal')" class="bg-blue-500/20 text-blue-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase italic border border-blue-500/30">Пополнить ваучером</button>
-                </div>
-            </div>
-            <h2 class="text-left boss-font text-sm mb-4 opacity-50 uppercase tracking-widest">История заказов</h2>
-            <div id="orders-history" class="space-y-2">
-                <!-- Заказы -->
-            </div>
-        </div>
-    </section>
-
-    <!-- MODAL: SUCCESS/GIFT -->
-    <div id="success-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden items-center justify-center p-6 z-[100]">
-        <div class="text-center max-w-sm">
-            <div id="success-icon" class="text-8xl mb-6">🎉</div>
-            <h2 class="boss-font text-2xl mb-4">УСПЕШНО 😉!</h2>
-            <div id="success-data" class="glass p-6 rounded-3xl mb-8 text-blue-400 font-mono text-lg break-all"></div>
-            <div class="flex flex-col gap-3">
-                <button id="gift-btn" class="w-full bg-purple-600 p-5 rounded-2xl font-black uppercase italic tracking-widest text-xs">Сделать подарком 🚀</button>
-                <button onclick="closeModal('success-modal')" class="opacity-40 text-xs font-bold uppercase">Закрыть</button>
-            </div>
+    <!-- ВСЕ МОДАЛЬНЫЕ ОКНА (ТЕПЕРЬ ОНИ ТУТ И БУДУТ РАБОТАТЬ) -->
+    
+    <!-- Модалка ваучера -->
+    <div id="modal-voucher" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden items-center justify-center z-[200] p-6">
+        <div class="premium-card p-10 rounded-[40px] w-full max-w-sm text-center">
+            <h2 class="boss-title text-2xl mb-6">Activate<br>Voucher</h2>
+            <input id="v-code" type="text" placeholder="XXXX-XXXX" class="w-full p-5 rounded-2xl mb-6 text-center font-mono text-xl uppercase italic">
+            <button onclick="activateVoucher()" class="w-full btn-boss p-5 rounded-2xl">Пополнить</button>
+            <button onclick="closeModal('modal-voucher')" class="mt-4 opacity-30 text-[10px] font-bold uppercase">Отмена</button>
         </div>
     </div>
 
-    <!-- ФОНОВЫЕ ЭФФЕКТЫ -->
-    <canvas id="gift-canvas" class="fixed inset-0 pointer-events-none z-[150]"></canvas>
+    <!-- Модалка отзыва -->
+    <div id="modal-review" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden items-center justify-center z-[200] p-6">
+        <div class="premium-card p-10 rounded-[40px] w-full max-w-md text-center">
+            <h2 class="boss-title text-2xl mb-6">Write<br>Review</h2>
+            <textarea id="r-text" placeholder="Ваше мнение..." class="w-full p-4 rounded-2xl h-32 mb-4 outline-none"></textarea>
+            <button onclick="sendReview()" class="w-full btn-boss p-5 rounded-2xl">Опубликовать</button>
+            <button onclick="closeModal('modal-review')" class="mt-4 opacity-30 text-[10px] font-bold uppercase">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Модалка Успеха (Выдача товара) -->
+    <div id="modal-success" class="fixed inset-0 bg-black/95 backdrop-blur-3xl hidden items-center justify-center z-[300] p-6">
+        <div class="text-center max-w-md">
+            <div class="text-8xl mb-6">💎</div>
+            <h2 class="boss-title text-3xl mb-4">ACCEPTED</h2>
+            <p class="text-gray-400 text-sm mb-8 italic">Данные отправлены вам в Telegram и отображены ниже:</p>
+            <div id="acc-output" class="premium-card p-8 rounded-[30px] font-mono text-blue-400 text-xl break-all mb-8 shadow-2xl shadow-blue-500/20"></div>
+            <div class="flex flex-col gap-4">
+                <button id="btn-gift" class="w-full bg-purple-600 p-5 rounded-2xl font-black text-xs uppercase italic tracking-widest shadow-xl shadow-purple-500/20">Отправить как подарок 🚀</button>
+                <button onclick="closeModal('modal-success')" class="btn-boss p-5 rounded-2xl text-[10px]">Вернуться в BOSS STORE</button>
+            </div>
+        </div>
+    </div>
 
     <script>
+        // ДАННЫЕ (ВСТАВЬ СВОИ)
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
+        const TG_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM'.trim();
+        const TG_CHAT_ID = '7727345054'.trim();
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let currentProducts = [];
+        let products = [];
 
-        // --- NAVIGATION ---
+        // НАВИГАЦИЯ
         function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`section-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            if(tab === 'news') loadNews();
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.hidden.md\\:flex button').forEach(b => b.classList.remove('nav-active'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`n-${tab}`).classList.add('nav-active');
             if(tab === 'reviews') loadReviews();
-            if(tab === 'profile') checkUser();
+            if(tab === 'shop') loadProducts();
         }
 
         function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
 
-        // --- SHOP LOGIC ---
-        async function loadShop() {
+        // ЗАГРУЗКА ТОВАРОВ
+        async function loadProducts() {
             const { data } = await sb.from('products').select('*');
-            currentProducts = data || [];
-            renderShop(currentProducts);
+            products = data || [];
+            renderProducts(products);
         }
 
-        function renderShop(items) {
+        function renderProducts(list) {
             const grid = document.getElementById('products-grid');
-            grid.innerHTML = items.map(p => `
-                <div class="glass p-6 rounded-[35px] card-shimmer flex flex-col justify-between group">
-                    <div class="mb-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="text-[8px] font-black uppercase tracking-[0.3em] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">Digital Product</span>
-                            <span class="text-xl font-black italic text-blue-500">${p.price}₽</span>
+            grid.innerHTML = list.map(p => `
+                <div class="premium-card p-8 rounded-[40px] flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="text-[8px] font-black uppercase tracking-widest text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">Boss Exclusive</span>
+                            <span class="text-2xl font-black italic">${p.price} ₽</span>
                         </div>
-                        <h3 class="boss-font text-lg leading-none mb-2 uppercase italic">${p.name}</h3>
-                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">${p.description}</p>
+                        <h3 class="boss-title text-xl mb-2 italic">${p.name}</h3>
+                        <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest mb-10">${p.description}</p>
                     </div>
-                    <button onclick="buyItem('${p.name}', ${p.price})" class="btn-premium w-full py-4 rounded-2xl text-[10px] font-black uppercase italic tracking-widest">Приобрести</button>
+                    <button onclick="buyItem('${p.name}', ${p.price})" class="btn-boss w-full py-5 rounded-2xl text-[11px]">Get Access</button>
                 </div>
             `).join('');
         }
 
+        // ПОКУПКА
         async function buyItem(name, price) {
             const { data: { user } } = await sb.auth.getUser();
             if(!user) return switchTab('profile');
 
             const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            if(prof.balance < price) { alert('Недостаточно BOSS-койнов!'); return; }
+            if(!prof || prof.balance < price) return alert("Пополните баланс BOSS!");
 
             const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
-            if(!acc) { alert('Товар в дефиците!'); return; }
+            if(!acc) return alert("Товар закончился!");
 
-            // Покупка
             await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
             await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+
+            // Выдача
+            document.getElementById('acc-output').innerText = acc.data;
+            document.getElementById('btn-gift').onclick = () => createGift(acc.data);
+            openModal('modal-success');
+
+            // БОТ ТЕЛЕГРАМ
+            const msg = `💎 BOSS STORE: НОВАЯ ПРОДАЖА\n\nТовар: ${name}\nДанные: ${acc.data}\nЮзер: ${user.email}`;
+            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(msg)}`);
             
-            // Сохраняем в историю (если есть таблица orders, если нет - пропустим)
-            
-            showSuccess(acc.data);
+            updateUserUI();
         }
 
-        function showSuccess(data) {
-            document.getElementById('success-data').innerText = data;
-            document.getElementById('gift-btn').onclick = () => createGiftLink(data);
-            openModal('success-modal');
-        }
-
-        // --- GIFT SYSTEM ---
-        async function createGiftLink(data) {
-            const giftId = crypto.randomUUID();
-            const { error } = await sb.from('gifts').insert([{ id: giftId, data: data, is_opened: false }]);
-            if(!error) {
-                const link = `${window.location.origin}/gift.html?id=${giftId}`;
-                navigator.clipboard.writeText(link);
-                alert("Ссылка-подарок скопирована! Отправь другу 🚀");
-            }
-        }
-
-        // --- AUTH & PROFILE ---
-        async function checkUser() {
+        // ВАУЧЕРЫ
+        async function activateVoucher() {
+            const code = document.getElementById('v-code').value.trim();
             const { data: { user } } = await sb.auth.getUser();
-            if (user) {
-                document.getElementById('profile-logged-out').classList.add('hidden');
-                document.getElementById('profile-logged-in').classList.remove('hidden');
-                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('user-balance').innerText = `${prof?.balance || 0} ₽`;
-                document.getElementById('user-top-ui').innerText = user.email.split('@')[0];
-            }
+            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
+            
+            if(!v) return alert("Ваучер недействителен");
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            await sb.from('profiles').update({ balance: (prof.balance || 0) + v.value }).eq('id', user.id);
+            await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
+
+            alert(`Зачислено ${v.value} ₽!`);
+            closeModal('modal-voucher');
+            updateUserUI();
         }
 
+        // АВТОРИЗАЦИЯ
         async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -215,9 +260,25 @@
             if(error) alert(error.message); else location.reload();
         }
 
-        // --- INITIAL LOAD ---
-        loadShop();
-        checkUser();
+        async function updateUserUI() {
+            const { data: { user } } = await sb.auth.getUser();
+            if(user) {
+                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+                document.getElementById('auth-form').classList.add('hidden');
+                document.getElementById('profile-data').classList.remove('hidden');
+                document.getElementById('balance-val').innerText = `${prof?.balance || 0} ₽`;
+                document.getElementById('user-status').innerText = user.email.split('@')[0];
+            }
+        }
+
+        async function createGift(data) {
+            const giftId = crypto.randomUUID();
+            await sb.from('gifts').insert([{ id: giftId, data: data, is_opened: false }]);
+            prompt("Ссылка-подарок готова! Скопируй:", `${window.location.origin}/gift.html?id=${giftId}`);
+        }
+
+        loadProducts();
+        updateUserUI();
     </script>
 </body>
 </html>
