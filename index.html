@@ -6,170 +6,254 @@
     <title>BOSS STORE | PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Syncopate:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: #111111; --text: #ffffff; --accent: #2563eb; --border: rgba(255,255,255,0.1); }
         .light-mode { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --border: rgba(0,0,0,0.05); }
+        
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; margin: 0; }
-        .boss-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; transition: 0.2s; }
+        .boss-font { font-family: 'Syncopate', sans-serif; }
+        .boss-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; transition: 0.2s; overflow: hidden; }
         .boss-card:hover { border-color: var(--accent); }
-        .drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 320px; height: 100%; background: var(--card); z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); overflow-y: auto; }
-        .drawer.active { right: 0; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; z-index: 900; }
-        .overlay.active { display: block; }
-        .btn-blue { background: var(--accent); color: white; font-weight: 800; border-radius: 12px; }
-        input { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); outline: none; }
-        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        
+        /* Боковое меню */
+        #side-menu { position: fixed; top: 0; right: -100%; width: 300px; height: 100%; background: var(--card); z-index: 1000; transition: 0.4s; border-left: 1px solid var(--border); box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        #side-menu.open { right: 0; }
+        .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 900; backdrop-filter: blur(4px); }
+        .menu-overlay.open { display: block; }
+
+        .btn-main { background: var(--accent); color: white; font-weight: 800; border-radius: 10px; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.95); }
+        
+        input { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); outline: none; padding: 12px; border-radius: 12px; }
+        .section-hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="overlay" onclick="toggleDrawer()"></div>
+    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
 
-    <!-- Шапка -->
-    <nav class="sticky top-0 z-50 bg-inherit border-b border-white/5 p-4 flex justify-between items-center max-w-6xl mx-auto">
-        <div class="text-xl font-black italic tracking-tighter text-blue-600">BOSS<span class="text-current">STORE</span></div>
-        <div class="flex items-center gap-5">
-            <button onclick="toggleTheme()" class="text-sm">🌓</button>
-            <button onclick="toggleDrawer()" class="flex flex-col gap-1.5 items-end">
-                <div class="w-6 h-0.5 bg-current"></div>
-                <div class="w-6 h-0.5 bg-current"></div>
-                <div class="w-4 h-0.5 bg-blue-600"></div>
-                            </button>
+    <!-- ШАПКА -->
+    <nav class="sticky top-0 z-50 bg-inherit border-b border-white/5 p-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="boss-font text-lg font-bold tracking-tighter text-blue-600 cursor-pointer" onclick="showSection('shop')">BOSSSTORE</div>
+            <div class="flex items-center gap-4">
+                                <button onclick="toggleTheme()" class="text-lg">🌓</button>
+                <!-- ТРИ ПОЛОСКИ -->
+                <button onclick="toggleMenu()" class="flex flex-col gap-1.5 items-end">
+                    <div class="w-6 h-0.5 bg-current"></div>
+                    <div class="w-6 h-0.5 bg-current"></div>
+                    <div class="w-4 h-0.5 bg-blue-600"></div>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <!-- Поиск и Заголовок -->
-    <header class="p-4 max-w-6xl mx-auto mt-6">
-        <h1 id="hero-title" class="text-4xl font-black uppercase italic mb-6 leading-none">EXCLUSIVE<br><span class="text-blue-600">ACCESS</span></h1>
-        <div class="relative">
-            <input type="text" id="search" oninput="doSearch()" placeholder="Поиск товара..." class="w-full p-4 rounded-2xl pl-12 text-sm">
-            <span class="absolute left-4 top-4 opacity-30">🔍</span>
-        </div>
-    </header>
-
-    <!-- Сетка товаров (Компактная) -->
-    <main class="p-4 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3" id="products-grid"></main>
-
-    <!-- МЕНЮ (DRAWER) -->
-    <div class="drawer p-8" id="drawer">
-        <div class="flex justify-between items-center mb-8">
-            <span class="font-black uppercase tracking-widest text-xs">Navigation</span>
-            <button onclick="toggleDrawer()" class="text-xl">✕</button>
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="max-w-6xl mx-auto p-4">
+        
+        <!-- СЕКЦИЯ: МАГАЗИН -->
+        <div id="sec-shop" class="section">
+            <header class="my-10">
+                <h1 id="hero-text" class="text-4xl md:text-6xl font-black italic uppercase leading-none mb-6">EXCLUSIVE<br><span class="text-blue-600">ACCESS</span></h1>
+                <input type="text" id="search" oninput="doSearch()" placeholder="Поиск товара..." class="w-full text-sm">
+            </header>
+            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="col-span-full text-center py-20 opacity-20 italic">Загрузка товаров...</div>
+            </div>
         </div>
 
-        <!-- Переключатели -->
-        <div class="flex gap-4 mb-10 text-[10px] font-black uppercase tracking-tighter">
-            <button onclick="switchSection('shop')" class="tab-btn active" id="btn-shop">Shop</button>
-            <button onclick="switchSection('news')" class="tab-btn" id="btn-news">Articles</button>
-            <button onclick="switchSection('reviews')" class="tab-btn" id="btn-reviews">Reviews</button>
+        <!-- СЕКЦИЯ: СТАТЬИ -->
+        <div id="sec-news" class="section section-hidden">
+            <h2 class="text-3xl font-black italic uppercase mb-8">Articles</h2>
+            <div id="news-list" class="grid gap-4"></div>
         </div>
 
-        <div id="auth-ui" class="space-y-4">
-            <input id="email" type="email" placeholder="Email" class="w-full p-3 rounded-xl text-xs">
-            <input id="pass" type="password" placeholder="Password" class="w-full p-3 rounded-xl text-xs">
-            <button onclick="auth('login')" class="w-full btn-blue p-3 text-xs uppercase">Войти</button>
-            <button onclick="auth('signup')" class="w-full border border-white/10 p-3 rounded-xl text-[10px] uppercase font-bold">Регистрация</button>
-            <button onclick="resetPass()" class="w-full text-center opacity-30 text-[9px] uppercase font-bold">Забыли пароль?</button>
+        <!-- СЕКЦИЯ: ОТЗЫВЫ -->
+        <div id="sec-reviews" class="section section-hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black italic uppercase">Reviews</h2>
+                <button onclick="bossAlert('Функция добавления скоро будет!', '✍️')" class="btn-main px-4 py-2 text-[10px]">Добавить</button>
+            </div>
+            <div id="reviews-list" class="grid gap-4"></div>
         </div>
 
-        <div id="user-ui" class="hidden space-y-6">
+    </main>
+
+    <!-- БОКОВОЕ МЕНЮ (ПРОФИЛЬ) -->
+    <div id="side-menu" class="p-8">
+        <div class="flex justify-between items-center mb-10">
+            <span class="boss-font text-xs opacity-40">BOSS TERMINAL</span>
+            <button onclick="toggleMenu()" class="text-2xl">✕</button>
+                    </div>
+
+        <!-- Если не вошел -->
+        <div id="auth-box" class="space-y-4">
+            <input id="email" type="email" placeholder="Email" class="w-full text-xs">
+            <input id="pass" type="password" placeholder="Password" class="w-full text-xs">
+            <button onclick="handleAuth('login')" class="w-full btn-main p-4 text-xs uppercase italic">Войти</button>
+            <button onclick="handleAuth('signup')" class="w-full border border-white/10 p-3 rounded-xl text-[9px] uppercase font-bold opacity-50">Регистрация</button>
+            <button onclick="resetPassword()" class="w-full text-center text-[9px] opacity-30 uppercase font-black">Забыли пароль?</button>
+        </div>
+
+        <!-- Если вошел -->
+        <div id="user-box" class="hidden space-y-8">
             <div>
-                                <p class="text-[9px] opacity-40 uppercase font-black mb-1">My Balance</p>
-                <h3 class="text-3xl font-black text-blue-600" id="balance-val">0 ₽</h3>
+                <p class="text-[9px] opacity-40 uppercase font-black mb-1">My Balance</p>
+                <h3 id="bal-display" class="text-4xl font-black text-blue-600 italic">0 ₽</h3>
             </div>
-            <div class="flex flex-col gap-4 text-xs font-bold uppercase tracking-widest border-t border-white/5 pt-6">
-                <button onclick="openModal('modal-voucher')">💰 Пополнить ваучером</button>
-                <button onclick="setLang('ru')">🇷🇺 Русский язык</button>
-                <button onclick="setLang('en')">🇺🇸 English</button>
-                <button onclick="logout()" class="text-red-500 pt-10">Logout</button>
-            </div>
+            <nav class="flex flex-col gap-5 text-xs font-black uppercase tracking-widest italic">
+                <button onclick="showSection('shop')" class="text-left hover:text-blue-600">📦 Магазин</button>
+                <button onclick="showSection('news')" class="text-left hover:text-blue-600">📄 Статьи</button>
+                <button onclick="showSection('reviews')" class="text-left hover:text-blue-600">⭐ Отзывы</button>
+                <button onclick="openVoucher()" class="text-left text-blue-400">💰 Пополнить</button>
+                <div class="flex gap-4 pt-4 border-t border-white/5">
+                    <button onclick="changeLang('ru')">RU</button>
+                    <button onclick="changeLang('en')">EN</button>
+                </div>
+                <button onclick="logout()" class="text-left text-red-600 mt-10">Выйти</button>
+            </nav>
         </div>
     </div>
 
-    <!-- СЕКЦИИ: СТАТЬИ И ОТЗЫВЫ (ВЫЕЗЖАЮТ) -->
-    <div id="news-section" class="fixed inset-0 bg-inherit z-[1100] hidden p-6 overflow-y-auto">
-        <button onclick="closeSection('news-section')" class="mb-10 font-black text-blue-600">← BACK</button>
-        <h2 class="text-3xl font-black mb-8 italic uppercase">News & Articles</h2>
-        <div id="news-list" class="space-y-6"></div>
-    </div>
-
-    <div id="reviews-section" class="fixed inset-0 bg-inherit z-[1100] hidden p-6 overflow-y-auto">
-        <button onclick="closeSection('reviews-section')" class="mb-10 font-black text-blue-600">← BACK</button>
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-black italic uppercase">Reviews</h2>
-            <button onclick="addReview()" class="text-[10px] btn-blue px-4 py-2">Add</button>
-        </div>
-        <div id="reviews-list" class="space-y-4"></div>
-    </div>
-
-    <!-- МОДАЛКИ -->
+    <!-- МОДАЛКА ВМЕСТО ALERT -->
     <div id="boss-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-[2000] p-6">
-        <div class="boss-card p-8 w-full max-w-xs text-center">
+        <div class="boss-card p-8 w-full max-w-xs text-center border-blue-600/30">
             <div id="m-icon" class="text-5xl mb-4">💡</div>
-            <p id="m-text" class="text-sm font-bold mb-6 whitespace-pre-wrap"></p>
-            <button onclick="closeModal('boss-modal')" class="w-full btn-blue p-4 text-xs uppercase italic">OK</button>
-        </div>
-    </div>
-
-    <div id="modal-voucher" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[2000] p-6">
-        <div class="boss-card p-8 w-full max-w-xs">
-            <input id="v-code" type="text" placeholder="Voucher Code" class="w-full p-4 rounded-xl text-center font-mono mb-4 italic">
-            <button onclick="useVoucher()" class="w-full btn-blue p-4 text-xs uppercase italic">Activate</button>
-            <button onclick="closeModal('modal-voucher')" class="w-full mt-2 opacity-30 text-[10px] uppercase font-bold">Close</button>
+            <p id="m-text" class="text-sm font-bold mb-6 italic"></p>
+            <button onclick="closeModal('boss-modal')" class="w-full btn-main p-4 text-xs uppercase italic">Принято</button>
         </div>
     </div>
 
     <script>
+        // --- ПОДКЛЮЧЕНИЕ (ВСТАВЬ СВОИ ДАННЫЕ) ---
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
         const TG_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
         const TG_CHAT_ID = '7727345054';
+        
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        let products = [];
 
-        let allProducts = [];
-        let lang = 'ru';
+        // --- ЛОГИКА ИНТЕРФЕЙСА ---
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('open');
+        }
 
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
-        function toggleDrawer() { 
-            document.getElementById('drawer').classList.toggle('active');
-            document.querySelector('.overlay').classList.toggle('active');
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.add('section-hidden'));
+            document.getElementById(`sec-${id}`).classList.remove('section-hidden');
+            if(id === 'news') loadNews();
+            if(id === 'reviews') loadReviews();
+            toggleMenu();
         }
-        function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
-        function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
-        function bossNotify(text, icon = '💡') {
+
+        function bossAlert(text, icon = '💡') {
             document.getElementById('m-text').innerText = text;
             document.getElementById('m-icon').innerText = icon;
-            openModal('boss-modal');
+            document.getElementById('boss-modal').classList.replace('hidden', 'flex');
         }
 
-        async function load() {
-            const { data } = await sb.from('products').select('*');
-            allProducts = data || [];
-            render(allProducts);
+        function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
+
+        // --- ЗАГРУЗКА ДАННЫХ ---
+        async function loadProducts() {
+            const { data, error } = await sb.from('products').select('*');
+            if(error) return bossAlert('Ошибка базы: ' + error.message, '❌');
+            products = data || [];
+            renderProducts(products);
         }
 
-        function render(list) {
+        function renderProducts(list) {
             const grid = document.getElementById('products-grid');
+            if(list.length === 0) { grid.innerHTML = '<p class="col-span-full opacity-30 text-center">Товаров пока нет.</p>'; return; }
             grid.innerHTML = list.map(p => `
                 <div class="boss-card p-4 flex flex-col justify-between">
                     <div class="mb-4">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-[7px] font-black uppercase text-blue-600">Boss Service</span>
+                            <span class="text-[7px] font-black text-blue-600 uppercase italic">Premium</span>
                             <span class="text-xs font-black italic">${p.price} ₽</span>
                         </div>
-                        <h3 class="text-[11px] font-black uppercase italic leading-tight truncate">${p.name}</h3>
+                        <h3 class="text-[10px] font-black uppercase italic truncate leading-tight">${p.name}</h3>
                     </div>
-                    <button onclick="buy('${p.name}', ${p.price})" class="btn-blue w-full py-2.5 text-[10px] uppercase italic tracking-tighter">Get Access</button>
-                </div>
+                    <button onclick="buyItem('${p.name}', ${p.price})" class="btn-main w-full py-2 text-[9px] uppercase italic">Get Access</button>
+                    </div>
             `).join('');
         }
 
         function doSearch() {
             const q = document.getElementById('search').value.toLowerCase();
-            render(allProducts.filter(p => p.name.toLowerCase().includes(q)));
+            renderProducts(products.filter(p => p.name.toLowerCase().includes(q)));
         }
 
-        // НАВИГАЦИЯ ПО СЕКЦИЯМ
-        function switchSection(name) {
-            if(name === 'news') { document.getElementById('news-section').classList.rem
+        // --- БИЗНЕС ЛОГИКА ---
+        async function handleAuth(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('pass').value;
+            const { error } = type === 'login' 
+                ? await sb.auth.signInWithPassword({ email, password })
+                : await sb.auth.signUp({ email, password });
+            if(error) bossAlert(error.message, '❌'); else location.reload();
+        }
+
+        async function buyItem(name, price) {
+            const { data: { user } } = await sb.auth.getUser();
+            if(!user) { toggleMenu(); return; }
+
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if(prof.balance < price) return bossAlert('Недостаточно BOSS-баланса!', '💸');
+
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
+            if(!acc) return bossAlert(`Товар "${name}" закончился в базе!`, '⏳');
+
+            await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
+            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+
+            bossAlert(`УСПЕШНО!\nДанные: ${acc.data}`, '💎');
+            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent('BOSS BUY: '+name+'\nData: '+acc.data)}`);
+            updateUI();
+        }
+
+        async function updateUI() {
+            const { data: { user } } = await sb.auth.getUser();
+            if(user) {
+                document.getElementById('auth-box').classList.add('hidden');
+                document.getElementById('user-box').classList.remove('hidden');
+                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+                document.getElementById('bal-display').innerText = `${prof?.balance || 0} ₽`;
+            }
+        }
+
+        async function loadNews() {
+            const { data } = await sb.from('articles').select('*');
+            document.getElementById('news-list').innerHTML = (data || []).map(n => `
+                <div class="boss-card p-5">
+                    <h4 class="font-black text-blue-600 uppercase italic mb-2">${n.title}</h4>
+                    <p class="text-xs opacity-50">${n.content}</p>
+                </div>
+            `).join('');
+        }
+
+        async function loadReviews() {
+            const { data } = await sb.from('reviews').select('*');
+            document.getElementById('reviews-list').innerHTML = (data || []).map(r => `
+                <div class="boss-card p-4 italic text-xs">"${r.text}"</div>
+            `).join('');
+        }
+
+        function changeLang(l) {
+            document.getElementById('hero-text').innerHTML = l === 'ru' ? 'EXCLUSIVE<br><span class="text-blue-600">ACCESS</span>' : 'PREMIUM<br><span class="text-blue-600">ACCESS</span>';
+            bossAlert(l === 'ru' ? 'Язык изменен' : 'Language updated');
+        }
+
+        function logout() { sb.auth.signOut().then(() => location.reload()); }
+
+        // Запуск
+        loadProducts();
+        updateUI();
+    </script>
+</body>
+</html>
