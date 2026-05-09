@@ -6,25 +6,20 @@
     <title>BOSS STORE | PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0b; --card: #141416; --text: #ffffff; --accent: #2563eb; --border: rgba(255,255,255,0.08); }
-        .light-mode { --bg: #f4f7ff; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --border: rgba(0,0,0,0.08); }
-        
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; margin: 0; overflow-x: hidden; }
-        .boss-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; transition: 0.3s; }
-        .boss-card:hover { border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn-blue { background: var(--accent); color: white; font-weight: 700; border-radius: 12px; transition: 0.2s; }
-        .btn-blue:active { transform: scale(0.95); }
-        
-        /* Боковое меню */
-        .drawer { position: fixed; top: 0; right: -100%; width: 280px; height: 100%; background: var(--card); z-index: 1000; transition: 0.4s; border-left: 1px solid var(--border); padding: 30px; }
+        :root { --bg: #050505; --card: #111111; --text: #ffffff; --accent: #2563eb; --border: rgba(255,255,255,0.1); }
+        .light-mode { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --border: rgba(0,0,0,0.05); }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; margin: 0; }
+        .boss-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; transition: 0.2s; }
+        .boss-card:hover { border-color: var(--accent); }
+        .drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 320px; height: 100%; background: var(--card); z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); overflow-y: auto; }
         .drawer.active { right: 0; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 900; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; z-index: 900; }
         .overlay.active { display: block; }
-
-        input { background: rgba(128,128,128,0.05); border: 1px solid var(--border); color: var(--text); outline: none; }
-        input:focus { border-color: var(--accent); }
+        .btn-blue { background: var(--accent); color: white; font-weight: 800; border-radius: 12px; }
+        input { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); outline: none; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -32,78 +27,96 @@
     <div class="overlay" onclick="toggleDrawer()"></div>
 
     <!-- Шапка -->
-    <nav class="flex justify-between items-center p-5 max-w-6xl mx-auto">
-        <div class="text-2xl font-black italic tracking-tighter text-blue-600">BOSS<span class="text-current">STORE</span></div>
-        <div class="flex items-center gap-4">
-            <button onclick="toggleTheme()" class="opacity-50 text-xs font-bold uppercase tracking-widest">🌓</button>
-            <button onclick="toggleDrawer()" class="flex flex-col gap-1.5">
+    <nav class="sticky top-0 z-50 bg-inherit border-b border-white/5 p-4 flex justify-between items-center max-w-6xl mx-auto">
+        <div class="text-xl font-black italic tracking-tighter text-blue-600">BOSS<span class="text-current">STORE</span></div>
+        <div class="flex items-center gap-5">
+            <button onclick="toggleTheme()" class="text-sm">🌓</button>
+            <button onclick="toggleDrawer()" class="flex flex-col gap-1.5 items-end">
                 <div class="w-6 h-0.5 bg-current"></div>
                 <div class="w-6 h-0.5 bg-current"></div>
-                                <div class="w-4 h-0.5 bg-blue-600 self-end"></div>
-            </button>
+                <div class="w-4 h-0.5 bg-blue-600"></div>
+                            </button>
         </div>
     </nav>
 
-    <!-- Главный блок -->
-    <header class="p-5 max-w-6xl mx-auto mt-5">
-        <h1 class="text-5xl font-black uppercase italic leading-none mb-8" id="i18n-hero">EXCLUSIVE<br><span class="text-blue-600">ACCESS</span></h1>
+    <!-- Поиск и Заголовок -->
+    <header class="p-4 max-w-6xl mx-auto mt-6">
+        <h1 id="hero-title" class="text-4xl font-black uppercase italic mb-6 leading-none">EXCLUSIVE<br><span class="text-blue-600">ACCESS</span></h1>
         <div class="relative">
             <input type="text" id="search" oninput="doSearch()" placeholder="Поиск товара..." class="w-full p-4 rounded-2xl pl-12 text-sm">
             <span class="absolute left-4 top-4 opacity-30">🔍</span>
         </div>
     </header>
 
-    <!-- Витрина -->
-    <main class="p-5 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3" id="products-grid">
-        <div class="col-span-full text-center py-20 opacity-20 italic">Загрузка BOSS данных...</div>
-    </main>
+    <!-- Сетка товаров (Компактная) -->
+    <main class="p-4 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3" id="products-grid"></main>
 
-    <!-- Боковое меню (Профиль) -->
-    <div class="drawer" id="drawer">
-        <div class="flex justify-between items-center mb-10">
-            <span class="font-black uppercase tracking-widest text-xs" id="i18n-menu">Меню</span>
-            <button onclick="toggleDrawer()" class="opacity-50 text-xl">✕</button>
+    <!-- МЕНЮ (DRAWER) -->
+    <div class="drawer p-8" id="drawer">
+        <div class="flex justify-between items-center mb-8">
+            <span class="font-black uppercase tracking-widest text-xs">Navigation</span>
+            <button onclick="toggleDrawer()" class="text-xl">✕</button>
         </div>
-        
-        <div id="auth-ui">
-            <div class="space-y-3">
-                <input id="auth-email" type="email" placeholder="Email" class="w-full p-3 rounded-xl text-xs">
-                <input id="auth-pass" type="password" placeholder="Пароль" class="w-full p-3 rounded-xl text-xs">
-                <button onclick="auth('login')" class="w-full btn-blue p-3 text-xs uppercase" id="i18n-login">Войти</button>
-                <button onclick="auth('signup')" class="w-full border border-white/10 p-3 rounded-xl text-[10px] uppercase font-bold" id="i18n-reg">Регистрация</button>
-                <button onclick="resetPass()" class="w-full text-center opacity-40 text-[9px] uppercase font-bold tracking-widest mt-2" id="i18n-forgot">Забыли пароль?</button>
+
+        <!-- Переключатели -->
+        <div class="flex gap-4 mb-10 text-[10px] font-black uppercase tracking-tighter">
+            <button onclick="switchSection('shop')" class="tab-btn active" id="btn-shop">Shop</button>
+            <button onclick="switchSection('news')" class="tab-btn" id="btn-news">Articles</button>
+            <button onclick="switchSection('reviews')" class="tab-btn" id="btn-reviews">Reviews</button>
+        </div>
+
+        <div id="auth-ui" class="space-y-4">
+            <input id="email" type="email" placeholder="Email" class="w-full p-3 rounded-xl text-xs">
+            <input id="pass" type="password" placeholder="Password" class="w-full p-3 rounded-xl text-xs">
+            <button onclick="auth('login')" class="w-full btn-blue p-3 text-xs uppercase">Войти</button>
+            <button onclick="auth('signup')" class="w-full border border-white/10 p-3 rounded-xl text-[10px] uppercase font-bold">Регистрация</button>
+            <button onclick="resetPass()" class="w-full text-center opacity-30 text-[9px] uppercase font-bold">Забыли пароль?</button>
+        </div>
+
+        <div id="user-ui" class="hidden space-y-6">
+            <div>
+                                <p class="text-[9px] opacity-40 uppercase font-black mb-1">My Balance</p>
+                <h3 class="text-3xl font-black text-blue-600" id="balance-val">0 ₽</h3>
             </div>
-        </div>
-
-        <div id="user-ui" class="hidden">
-            <p class="text-[10px] opacity-40 uppercase font-black mb-1">Balance</p>
-            <h3 class="text-3xl font-black text-blue-600 mb-6" id="user-balance">0 ₽</h3>
-            <div class="flex flex-col gap-4 text-xs font-bold uppercase tracking-widest">
-                <button onclick="openModal('modal-voucher')" class="text-left hover:text-blue-500">💰 Ваучер</button>
-                <button onclick="switchTab('orders')" class="text-left hover:text-blue-500">📦 История</button>
-                <button onclick="setLang('ru')" class="text-left text-[10px]">🇷🇺 RU</button>
-                <button onclick="setLang('en')" class="text-left text-[10px]">🇺🇸 EN</button>
-                <button onclick="logout()" class="text-left text-red-500 mt-10">Выход</button>
+            <div class="flex flex-col gap-4 text-xs font-bold uppercase tracking-widest border-t border-white/5 pt-6">
+                <button onclick="openModal('modal-voucher')">💰 Пополнить ваучером</button>
+                <button onclick="setLang('ru')">🇷🇺 Русский язык</button>
+                <button onclick="setLang('en')">🇺🇸 English</button>
+                <button onclick="logout()" class="text-red-500 pt-10">Logout</button>
             </div>
         </div>
     </div>
 
-    <!-- МОДАЛКИ (ВМЕСТО ALERT) -->
-    <div id="custom-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-[2000] p-6">
-        <div class="boss-card p-8 w-full max-w-xs text-center border-blue-600/30">
-            <div id="modal-icon" class="text-5xl mb-4">💡</div>
-            <p id="modal-text" class="text-sm font-bold mb-6"></p>
-            <button onclick="closeModal('custom-modal')" class="w-full btn-blue p-4 text-xs uppercase">Понятно</button>
+    <!-- СЕКЦИИ: СТАТЬИ И ОТЗЫВЫ (ВЫЕЗЖАЮТ) -->
+    <div id="news-section" class="fixed inset-0 bg-inherit z-[1100] hidden p-6 overflow-y-auto">
+        <button onclick="closeSection('news-section')" class="mb-10 font-black text-blue-600">← BACK</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase">News & Articles</h2>
+        <div id="news-list" class="space-y-6"></div>
+    </div>
+
+    <div id="reviews-section" class="fixed inset-0 bg-inherit z-[1100] hidden p-6 overflow-y-auto">
+        <button onclick="closeSection('reviews-section')" class="mb-10 font-black text-blue-600">← BACK</button>
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black italic uppercase">Reviews</h2>
+            <button onclick="addReview()" class="text-[10px] btn-blue px-4 py-2">Add</button>
+        </div>
+        <div id="reviews-list" class="space-y-4"></div>
+    </div>
+
+    <!-- МОДАЛКИ -->
+    <div id="boss-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-[2000] p-6">
+        <div class="boss-card p-8 w-full max-w-xs text-center">
+            <div id="m-icon" class="text-5xl mb-4">💡</div>
+            <p id="m-text" class="text-sm font-bold mb-6 whitespace-pre-wrap"></p>
+            <button onclick="closeModal('boss-modal')" class="w-full btn-blue p-4 text-xs uppercase italic">OK</button>
         </div>
     </div>
 
-    <!-- Модалка Ваучера -->
-    <div id="modal-voucher" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-[2000] p-6">
+    <div id="modal-voucher" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[2000] p-6">
         <div class="boss-card p-8 w-full max-w-xs">
-            <h2 class="font-black uppercase mb-4 text-center">Активация</h2>
-            <input id="v-code" type="text" placeholder="КОД" class="w-full p-4 rounded-xl text-center font-mono mb-4">
-            <button onclick="useVoucher()" class="w-full btn-blue p-4 text-xs uppercase">Пополнить</button>
-            <button onclick="closeModal('modal-voucher')" class="w-full mt-2 opacity-30 text-[10px] uppercase font-bold">Закрыть</button>
+            <input id="v-code" type="text" placeholder="Voucher Code" class="w-full p-4 rounded-xl text-center font-mono mb-4 italic">
+            <button onclick="useVoucher()" class="w-full btn-blue p-4 text-xs uppercase italic">Activate</button>
+            <button onclick="closeModal('modal-voucher')" class="w-full mt-2 opacity-30 text-[10px] uppercase font-bold">Close</button>
         </div>
     </div>
 
@@ -114,43 +127,26 @@
         const TG_CHAT_ID = '7727345054';
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let products = [];
+        let allProducts = [];
         let lang = 'ru';
 
-        const i18n = {
-            ru: { hero: 'EXCLUSIVE<br><span class="text-blue-600">ACCESS</span>', login: 'Войти', reg: 'Регистрация', menu: 'Меню', forgot: 'Забыли пароль?' },
-            en: { hero: 'PREMIUM<br><span class="text-blue-600">STORE</span>', login: 'Login', reg: 'Sign Up', menu: 'Menu', forgot: 'Forgot password?' }
-        };
-
-        // ТЕМА И ЯЗЫК
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
         function toggleDrawer() { 
-            document.getElementById('drawer').classList.toggle('active'); 
+            document.getElementById('drawer').classList.toggle('active');
             document.querySelector('.overlay').classList.toggle('active');
-        }
-        function setLang(l) {
-            lang = l;
-            document.getElementById('i18n-hero').innerHTML = i18n[l].hero;
-            document.getElementById('i18n-login').innerText = i18n[l].login;
-            document.getElementById('i18n-reg').innerText = i18n[l].reg;
-            document.getElementById('i18n-menu').innerText = i18n[l].menu;
-            document.getElementById('i18n-forgot').innerText = i18n[l].forgot;
-        }
-
-        // МОДАЛКИ
-        function bossAlert(text, icon = '💡') {
-            document.getElementById('modal-text').innerText = text;
-            document.getElementById('modal-icon').innerText = icon;
-            document.getElementById('custom-modal').classList.replace('hidden', 'flex');
         }
         function openModal(id) { document.getElementById(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
+        function bossNotify(text, icon = '💡') {
+            document.getElementById('m-text').innerText = text;
+            document.getElementById('m-icon').innerText = icon;
+            openModal('boss-modal');
+        }
 
-        // ЗАГРУЗКА
         async function load() {
             const { data } = await sb.from('products').select('*');
-            products = data || [];
-            render(products);
+            allProducts = data || [];
+            render(allProducts);
         }
 
         function render(list) {
@@ -159,96 +155,21 @@
                 <div class="boss-card p-4 flex flex-col justify-between">
                     <div class="mb-4">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-[7px] font-black uppercase text-blue-600">Premium</span>
-                            <span class="text-xs font-black">${p.price} ₽</span>
+                            <span class="text-[7px] font-black uppercase text-blue-600">Boss Service</span>
+                            <span class="text-xs font-black italic">${p.price} ₽</span>
                         </div>
-                        <h3 class="text-xs font-bold uppercase truncate">${p.name}</h3>
+                        <h3 class="text-[11px] font-black uppercase italic leading-tight truncate">${p.name}</h3>
                     </div>
-                    <button onclick="buy('${p.name}', ${p.price})" class="btn-blue w-full py-2 text-[9px] uppercase tracking-tighter">Get Access</button>
+                    <button onclick="buy('${p.name}', ${p.price})" class="btn-blue w-full py-2.5 text-[10px] uppercase italic tracking-tighter">Get Access</button>
                 </div>
             `).join('');
         }
 
         function doSearch() {
             const q = document.getElementById('search').value.toLowerCase();
-            render(products.filter(p => p.name.toLowerCase().includes(q)));
+            render(allProducts.filter(p => p.name.toLowerCase().includes(q)));
         }
 
-        // AUTH
-        async function auth(type) {
-            const email = document.getElementById('auth-email').value;
-            const password =document.getElementById('auth-pass').value;
-            const { data, error } = type === 'login' 
-                ? await sb.auth.signInWithPassword({ email, password })
-                : await sb.auth.signUp({ email, password });
-            
-            if(error) bossAlert(error.message, '❌');
-            else {
-                if(type === 'signup') bossAlert('Проверьте почту для подтверждения!', '📧');
-                else location.reload();
-            }
-        }
-
-        async function logout() { await sb.auth.signOut(); location.reload(); }
-
-        async function resetPass() {
-            const email = document.getElementById('auth-email').value;
-            if(!email) return bossAlert('Введите Email!', '📧');
-            await sb.auth.resetPasswordForEmail(email);
-            bossAlert('Инструкция отправлена на почту', '✅');
-        }
-
-        // БИЗНЕС ЛОГИКА
-        async function useVoucher() {
-            const code = document.getElementById('v-code').value.trim();
-            const { data: { user } } = await sb.auth.getUser();
-            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
-            
-            if(!v) return bossAlert('Ваучер не найден!', '❌');
-
-            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            await sb.from('profiles').update({ balance: (prof.balance || 0) + v.value }).eq('id', user.id);
-            await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
-
-            bossAlert(`Зачислено ${v.value} ₽`, '💰');
-            closeModal('modal-voucher');
-            check();
-        }
-
-        async function buy(name, price) {
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) return toggleDrawer();
-
-            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            if(prof.balance < price) return bossAlert('Баланс слишком мал!', '💸');
-
-            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
-            if(!acc) return bossAlert('Товар закончился!', '⏳');
-
-            await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
-            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-
-            bossAlert(`УСПЕШНО 😉!\nДанные: ${acc.data}`, '💎');
-            
-            // ТЕЛЕГРАМ
-            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent('BOSS BUY: '+name+'\nData: '+acc.data)}`);
-            
-            check();
-        }
-
-        async function check() {
-            const { data: { user } } = await sb.auth.getUser();
-            if(user) {
-                document.getElementById('auth-ui').classList.add('hidden');
-                document.getElementById('user-ui').classList.remove('hidden');
-                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('user-balance').innerText = `${prof?.balance || 0} ₽`;
-                document.getElementById('user-status').innerText = user.email.split('@')[0];
-            }
-        }
-
-        load();
-        check();
-    </script>
-</body>
-</html>
+        // НАВИГАЦИЯ ПО СЕКЦИЯМ
+        function switchSection(name) {
+            if(name === 'news') { document.getElementById('news-section').classList.rem
