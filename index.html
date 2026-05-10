@@ -11,7 +11,7 @@
     <style>
         :root { --gold: #FFD700; --bg: #000; --card: #0d0d0d; }
         body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 110px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); overflow: hidden; }
+        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); overflow: hidden; position: relative; }
         .btn-gold { background: linear-gradient(180deg, #FFD700 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 14px; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: rgba(5,5,5,0.98); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,215,0,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
         .nav-item { color: #444; font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
@@ -23,7 +23,7 @@
         input { background: #2a2b32 !important; border: 1px solid rgba(255,255,255,0.05) !important; border-radius: 14px; padding: 16px; color: #fff; font-size: 14px; outline: none; width: 100%; }
         label { font-size: 11px; opacity: 0.5; margin-bottom: 8px; display: block; text-transform: uppercase; font-weight: 600; }
         .hidden { display: none !important; }
-        #can { position: absolute; inset: 0; z-index: 20; touch-action: none; border-radius: 20px; }
+        #can { position: absolute; inset: 0; z-index: 20; touch-action: none; border-radius: 20px; width: 100%; height: 100%; }
                 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: flex; align-items: center; justify-content: center; padding: 20px; }
     </style>
 </head>
@@ -37,10 +37,10 @@
         <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505]">
             <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
             <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-left mb-6">
-                <p class="text-[8px] opacity-40 font-black uppercase mb-1">Реквизиты (Т-Банк)</p>
-                <p class="font-bold text-yellow-500 text-sm">+7 950 170 07 87</p>
+                <p class="text-[8px] opacity-40 font-black uppercase mb-1">Т-Банк / СБП</p>
+                <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
             </div>
-            <div class="mb-8">
+            <div class="mb-8 text-center">
                 <p class="text-[10px] font-black opacity-30 uppercase">К оплате:</p>
                 <p id="p-total" class="text-4xl font-black text-yellow-500">0 ₽</p>
             </div>
@@ -55,13 +55,13 @@
     <div class="sheet" id="sheet-up">
         <div class="w-12 h-1.5 bg-white/10 mx-auto rounded-full mb-8"></div>
         <div id="up-step-1" class="space-y-5">
-            <h2 class="text-2xl font-bold mb-4">Регистрация</h2>
+            <h2 class="text-2xl font-bold mb-4 italic">Регистрация</h2>
             <div><label>Логин</label><input id="up-login" placeholder="Ivan_Ivanov"></div>
             <div><label>Email</label><input id="up-email" placeholder="mail@example.com"></div>
             <button onclick="nextStep()" class="btn-gold w-full py-5 mt-4">Далее</button>
         </div>
         <div id="up-step-2" class="space-y-5 hidden">
-            <h2 class="text-2xl font-bold mb-4">Пароль</h2>
+            <h2 class="text-2xl font-bold mb-4 italic">Пароль</h2>
                         <div><label>Придумайте пароль</label><input id="up-pass" type="password" placeholder="********"></div>
             <button onclick="auth('up')" class="btn-gold w-full py-5 mt-4">Создать</button>
         </div>
@@ -70,7 +70,7 @@
     <!-- ВХОД -->
     <div class="sheet" id="sheet-in">
         <div class="w-12 h-1.5 bg-white/10 mx-auto rounded-full mb-8"></div>
-        <h2 class="text-2xl font-bold mb-8">Вход</h2>
+        <h2 class="text-2xl font-bold mb-8 italic">Вход</h2>
         <div class="space-y-5">
             <input id="in-email" placeholder="Email">
             <input id="in-pass" type="password" placeholder="Пароль">
@@ -101,48 +101,11 @@
 
         const tgUser = tg.initDataUnsafe?.user || {};
 
-        async function processPurchase() {
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) return showToast("ВОЙДИТЕ В АККАУНТ");
-
-            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
-            if(!acc) return showToast("ТОВАР ЗАКОНЧИЛСЯ");
-
-            const genCode = 'BOSS-' + Math.floor(1000 + Math.random() * 9000);
-
-            // 1. ОТПРАВКА КЛИЕНТУ (в его ID)
-            const clientMsg = `📦 ТВОЙ ЗАКАЗ: ${activeItem.n}\n\n🔑 ДАННЫЕ: ${acc.data}\n🆔 КОД: ${genCode}\n\nСпасибо за покупку в BOSS STORE!`;
-            
-            // 2. ОТПРАВКА АДМИНУ (ТЕБЕ)
-            const adminMsg = `👤 НОВЫЙ ЗАКАЗ\n\nЮзер: @${tgUser.username || 'unknown'}\nID: ${tgUser.id || 'unknown'}\nТовар: ${activeItem.n}\nЦена: ${activeItem.p} ₽`;
-
-            try {
-                // Шлем клиенту
-                if(tgUser.id) {
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: tgUser.id, text: clientMsg })
-                    });
-                }
-
-                // Шлем тебе
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: ADMIN_ID, text: adminMsg })
-                });
-
-                await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-                showToast("УСПЕШНО! ДАННЫЕ В БОТЕ");
-                closePay();
-            } catch (e) { showToast("ОШИБКА БОТА"); }
-        }
-
         async function render(page) {
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-' + page).classList.add('active');
+            app.innerHTML = '';
 
             if (page === 'shop') {
                 app.innerHTML = `<h1 class="text-xl font-black italic text-yellow-500 uppercase text-center mb-6">BOSS STORE</h1><div id="grid" class="grid grid-cols-2 gap-4 pb-10"></div>`;
@@ -150,31 +113,62 @@
                 products = data || [];
                 document.getElementById('grid').innerHTML = products.map(p => {
                     const dPrice = Math.round(p.price * (1 - state.discount / 100));
-                    return `<div class="boss-card flex flex-col h-full"><img src="${p.image_url}" class="w-full aspect-square object-cover"><div class="p-4 flex-1 flex flex-col justify-between"><div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3><p class="text-sm font-black italic">${dPrice} ₽</p></div><button onclick="openPay('${p.name}', ${dPrice})" class="btn-gold w-full py-3 text-[10px] mt-4">КУПИТЬ</button></div></div>`;
+                    return `<div class="boss-card flex flex-col h-full bg-[#0d0d0d]"><img src="${p.image_url}" class="w-full aspect-square object-cover"><div class="p-4 flex-1 flex flex-col justify-between"><div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3><p class="text-sm font-black italic text-white">${dPrice} ₽</p></div><button onclick="openPay('${p.name}', ${dPrice})" class="btn-gold w-full py-3 text-[10px] mt-4">КУПИТЬ</button></div></div>`;
                 }).join('');
             } 
+            else if (page === 'luck') {
+                const canUse = !state.lastLuck || (Date.now() - state.lastLuck) > 86400000;
+                app.innerHTML = `<div class="flex flex-col items-center pt-10"><h2 class="text-yellow-500 font-black uppercase text-2xl mb-12 italic">УДАЧА</h2><div id="scr-wrap" class="relative bg-[#070707] rounded-3xl border border-white/5 overflow-hidden" style="width:320px; height:200px;"><div id="luck-val" class="flex items-center justify-center h-full text-6xl font-black text-yellow-500 italic">${state.discount > 0 ? state.discount + '%' : '???'}</div>${canUse ? '<canvas id="can"></canvas>' : '<div class="absolute inset-0 bg-black/90 flex items-center justify-center text-[10px] font-bold uppercase p-12 text-center opacity-60">Карта будет доступна завтра</div>'}</div></div>`;
+                if(canUse) setTimeout(initScr, 100);
+            }
+            else if (page === 'reviews') {
+                const { data } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
+                app.innerHTML = `<h2 class="text-yellow-500 font-black text-center text-xl mb-8 uppercase italic">Отзывы</h2><div class="space-y-4 pb-10">${(data || []).map(r => `<div class="boss-card p-5 border-white/5"><div class="flex justify-between mb-2"><span class="text-yellow-500 font-black text-[8px] uppercase">${r.user_email || 'BOSS CLIENT'}</span></div><p class="text-[10px] italic opacity-80">"${r.text || r.content}"</p></div>`).join('')}</div>`;
+            }
             else if (page === 'status') {
                 const { data: { session } } = await sb.auth.getSession();
                 if(!session) {
-                    app.innerHTML = `<div class="pt-20 text-center"><div class="boss-card p-10"><h2 class="text-2xl font-black mb-8 uppercase italic">BOSS Account</h2><button onclick="openSheet('up')" class="btn-gold w-full py-5">Создать</button><button onclick="openSheet('in')" class="w-full py-4 mt-2 opacity-30 text-[10px] font-bold">ВХОД</button></div></div>`;
+                    app.innerHTML = `<div class="pt-20 text-center"><div class="boss-card p-10"><h2 class="text-2xl font-black mb-8 uppercase italic">BOSS ACCOUNT</h2><button onclick="openSheet('up')" class="btn-gold w-full py-5 text-sm">СОЗДАТЬ</button><button onclick="openSheet('in')" class="w-full py-4 mt-2 opacity-30 text-[10px] font-bold uppercase">Вход</button></div></div>`;
                 } else {
                     const { data: prof } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-                    app.innerHTML = `<div class="boss-card p-10 text-center"><p class="text-yellow-500 text-[10px] font-black uppercase mb-10 tracking-[4px]">VIP STATUS</p><h2 class="text-5xl font-black text-yellow-500 italic mb-8">${prof?.balance || 0} ₽</h2><button onclick="sb.auth.signOut().then(()=>location.reload())" class="opacity-20 text-[9px] underline uppercase">Выйти</button></div>`;
+                    app.innerHTML = `<div class="boss-card p-10 text-center bg-gradient-to-br from-yellow-500/10 to-transparent"><p class="text-yellow-500 text-[10px] font-black uppercase mb-10 tracking-[4px]">BOSS VIP</p><h2 class="text-5xl font-black text-yellow-500 italic mb-8">${prof?.balance || 0} ₽</h2><p class="opacity-30 text-[10px] mb-8 font-bold">${session.user.email}</p><button onclick="sb.auth.signOut().then(()=>location.reload())" class="opacity-20 text-[9px] underline uppercase font-black">ВЫЙТИ</button></div>`;
                 }
             }
-            else if (page === 'luck') {
-                const canUse = !state.lastLuck || (Date.now() - state.lastLuck) > 86400000;
-                app.innerHTML = `<div class="flex flex-col items-center pt-10"><h2 class="text-yellow-500 font-black uppercase text-2xl mb-12 italic">УДАЧА</h2><div id="scr-wrap" class="relative bg-[#070707] rounded-3xl border border-white/5 overflow-hidden" style="width:320px; height:200px;"><div id="luck-val" class="flex items-center justify-center h-full text-6xl font-black text-yellow-500 italic">${state.discount > 0 ? state.discount + '%' : '???'}</div>${canUse ? '<canvas id="can"></canvas>' : '<div class="absolute inset-0 bg-black/90 flex items-center justify-center text-[11px] font-bold uppercase p-12 text-center">Заходи завтра</div>'}</div></div>`;
-                if(canUse) initScr();
+            else if (page === 'promo') {
+                app.innerHTML = `<div class="pt-10"><h2 class="text-yellow-500 font-black text-center mb-8 uppercase italic">Ваучер</h2><input id="v-in" placeholder="КОД ВАУЧЕРА" class="mb-4"><button onclick="applyV()" class="btn-gold w-full py-5 text-sm">Активировать</button></div>`;
             }
         }
 
-        // СКРЕТЧ-КАРТА С БАРАБАНОМ
+        async function processPurchase() {
+            const { data: { user } } = await sb.auth.getUser();
+            if(!user) return showToast("СНАЧАЛА ВОЙДИТЕ В ПРОФИЛЬ!");
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
+            if(!acc) return showToast("ТОВАР ЗАКОНЧИЛСЯ");
+            const genCode = 'BOSS-' + Math.floor(1000 + Math.random() * 9000);
+            try {
+                if(tgUser.id) {
+                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: tgUser.id, text: `📦 ЗАКАЗ: ${activeItem.n}\n🔑 ДАННЫЕ: ${acc.data}\n🆔 КОД: ${genCode}` })
+                    });
+                }
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: ADMIN_ID, text: `👤 КУПИЛ: @${tgUser.username || '?'}\n🆔 ID: ${tgUser.id}\n🛒: ${activeItem.n}\n💰: ${activeItem.p} ₽` })
+                });
+                await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+                showToast("ОПЛАЧЕНО! ПРОВЕРЬ БОТА");
+                closePay();
+            } catch (e) { showToast("ОШИБКА БОТА"); }
+        }
+
         function initScr() {
-            const can = document.getElementById('can'), ctx = can.getContext('2d');
-            can.width = 320; can.height = 200;
-            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,320,200);
-            ctx.fillStyle = '#FFD700'; ctx.font = '900 20px Montserrat'; ctx.textAlign = 'center'; ctx.fillText('STRETCH TO WIN', 160, 110);
+            const can = document.getElementById('can'); if(!can) return;
+            const ctx = can.getContext('2d');
+            can.width = can.offsetWidth; can.height = can.offsetHeight;
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,can.width,can.height);
+            ctx.fillStyle = '#FFD700'; ctx.font = '900 18px Montserrat'; ctx.textAlign = 'center'; ctx.fillText('STRETCH TO WIN', can.width/2, can.height/2 + 5);
             let active = false;
             const scratch = (e) => {
                 if(!active) return;
@@ -182,15 +176,19 @@
                 const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
                 const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI*2); ctx.fill();
-                const d = ctx.getImageData(0,0,320,200).data;
+                ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI*2); ctx.fill();
+                const d = ctx.getImageData(0,0,can.width,can.height).data;
                 let t = 0; for(let i=3; i<d.length; i+=4) if(d[i]===0) t++;
-                if(t > d.length/4 * 0.45) { can.remove(); animateLuck(); }
+                if(t > (d.length/4) * 0.5) { can.remove(); animateLuck(); }
             };
+            can.addEventListener('mousedown', () => active = true);
             can.addEventListener('touchstart', () => active = true);
+            window.addEventListener('mousemove', scratch);
             window.addEventListener('touchmove', scratch);
+            window.addEventListener('mouseup', () => active = false);
             window.addEventListener('touchend', () => active = false);
         }
+
         function animateLuck() {
             const el = document.getElementById('luck-val');
             let c = 0, target = Math.floor(Math.random()*15)+5;
