@@ -92,8 +92,8 @@
         const tg = window.Telegram.WebApp;
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'; 
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
-        const BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
-        const ADMIN_ID = '7727345054';
+        const BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM'; // ТВОЙ ТОКЕН БОТА
+        const ADMIN_ID = '7727345054'; // ТВОЙ АЙДИ (АЙДИ АДМИНА)
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
         let state = JSON.parse(localStorage.getItem('BOSS_V32')) || { discount: 0, lastLuck: 0 };
@@ -105,7 +105,7 @@
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-' + page).classList.add('active');
-            app.innerHTML = '';
+            app.innerHTML = ''; // Очищаем контейнер перед загрузкой новой страницы
 
             if (page === 'shop') {
                 app.innerHTML = `<h1 class="text-xl font-black italic text-yellow-500 uppercase text-center mb-6">BOSS STORE</h1><div id="grid" class="grid grid-cols-2 gap-4 pb-10"></div>`;
@@ -113,13 +113,13 @@
                 products = data || [];
                 document.getElementById('grid').innerHTML = products.map(p => {
                     const dPrice = Math.round(p.price * (1 - state.discount / 100));
-                    return `<div class="boss-card flex flex-col h-full bg-[#0d0d0d]"><img src="${p.image_url}" class="w-full aspect-square object-cover"><div class="p-4 flex-1 flex flex-col justify-between"><div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3><p class="text-sm font-black italic text-white">${dPrice} ₽</p></div><button onclick="openPay('${p.name}', ${dPrice})" class="btn-gold w-full py-3 text-[10px] mt-4">КУПИТЬ</button></div></div>`;
+                    return `<div class="boss-card flex flex-col h-full bg-[#0d0d0d]"><img src="${p.image_url}" class="w-full aspect-square object-cover" onerror="this.src='https://via.placeholder.com/150/111/yellow?text=BOSS'"><div class="p-4 flex-1 flex flex-col justify-between"><div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3><p class="text-sm font-black italic text-white">${dPrice} ₽</p></div><button onclick="openPay('${p.name}', ${dPrice})" class="btn-gold w-full py-3 text-[10px] mt-4">КУПИТЬ</button></div></div>`;
                 }).join('');
             } 
             else if (page === 'luck') {
-                const canUse = !state.lastLuck || (Date.now() - state.lastLuck) > 86400000;
-                app.innerHTML = `<div class="flex flex-col items-center pt-10"><h2 class="text-yellow-500 font-black uppercase text-2xl mb-12 italic">УДАЧА</h2><div id="scr-wrap" class="relative bg-[#070707] rounded-3xl border border-white/5 overflow-hidden" style="width:320px; height:200px;"><div id="luck-val" class="flex items-center justify-center h-full text-6xl font-black text-yellow-500 italic">${state.discount > 0 ? state.discount + '%' : '???'}</div>${canUse ? '<canvas id="can"></canvas>' : '<div class="absolute inset-0 bg-black/90 flex items-center justify-center text-[10px] font-bold uppercase p-12 text-center opacity-60">Карта будет доступна завтра</div>'}</div></div>`;
-                if(canUse) setTimeout(initScr, 100);
+                const canUse = !state.lastLuck || (Date.now() - state.lastLuck) > 86400000; // Раз в 24 часа
+                app.innerHTML = `<div class="flex flex-col items-center pt-10"><h2 class="text-yellow-500 font-black uppercase text-2xl mb-12 italic">УДАЧА</h2><div id="scr-wrap" class="relative bg-[#070707] rounded-3xl border border-white/5 overflow-hidden" style="width:320px; height:200px;"><div id="luck-val" class="flex items-center justify-center h-full text-6xl font-black text-yellow-500 italic">${state.discount > 0 ? state.discount + '%' : '???'}</div>${canUse ? '<canvas id="can"></canvas>' : '<div class="absolute inset-0 bg-black/90 flex items-center justify-center text-[11px] font-bold uppercase p-12 text-center opacity-60">Карта будет доступна через 24 часа</div>'}</div></div>`;
+                if(canUse) initScr(); // Сразу вызываем initScr, чтобы карта была готова
             }
             else if (page === 'reviews') {
                 const { data } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
@@ -131,7 +131,7 @@
                     app.innerHTML = `<div class="pt-20 text-center"><div class="boss-card p-10"><h2 class="text-2xl font-black mb-8 uppercase italic">BOSS ACCOUNT</h2><button onclick="openSheet('up')" class="btn-gold w-full py-5 text-sm">СОЗДАТЬ</button><button onclick="openSheet('in')" class="w-full py-4 mt-2 opacity-30 text-[10px] font-bold uppercase">Вход</button></div></div>`;
                 } else {
                     const { data: prof } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-                    app.innerHTML = `<div class="boss-card p-10 text-center bg-gradient-to-br from-yellow-500/10 to-transparent"><p class="text-yellow-500 text-[10px] font-black uppercase mb-10 tracking-[4px]">BOSS VIP</p><h2 class="text-5xl font-black text-yellow-500 italic mb-8">${prof?.balance || 0} ₽</h2><p class="opacity-30 text-[10px] mb-8 font-bold">${session.user.email}</p><button onclick="sb.auth.signOut().then(()=>location.reload())" class="opacity-20 text-[9px] underline uppercase font-black">ВЫЙТИ</button></div>`;
+                    app.innerHTML = `<div class="boss-card p-10 text-center bg-gradient-to-br from-yellow-500/10 to-transparent"><p class="text-yellow-500 text-[11px] font-black uppercase mb-10 tracking-[4px]">BOSS VIP STATUS</p><h2 class="text-5xl font-black text-yellow-500 italic mb-8">${prof?.balance || 0} ₽</h2><p class="opacity-30 text-[10px] mb-8 font-bold">${session.user.email}</p><button onclick="sb.auth.signOut().then(()=>location.reload())" class="opacity-20 text-[9px] underline uppercase font-black">ВЫЙТИ</button></div>`;
                 }
             }
             else if (page === 'promo') {
@@ -144,71 +144,219 @@
             if(!user) return showToast("СНАЧАЛА ВОЙДИТЕ В ПРОФИЛЬ!");
             const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
             if(!acc) return showToast("ТОВАР ЗАКОНЧИЛСЯ");
-            const genCode = 'BOSS-' + Math.floor(1000 + Math.random() * 9000);
+            const genCode = 'BOSS-' + Math.floor(1000 + Math.random() * 9000); // Генерируем уникальный код
+
             try {
-                if(tgUser.id) {
+                // 1. Отправляем данные аккаунта КЛИЕНТУ
+                if(tgUser.id) { // Проверяем, есть ли у клиента Telegram ID
                     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: tgUser.id, text: `📦 ЗАКАЗ: ${activeItem.n}\n🔑 ДАННЫЕ: ${acc.data}\n🆔 КОД: ${genCode}` })
+                        body: JSON.stringify({ chat_id: tgUser.id, text: `📦 ТВОЙ ЗАКАЗ: ${activeItem.n}\n\n🔑 ДАННЫЕ: ${acc.data}\n🆔 КОД: ${genCode}\n\nСпасибо за покупку в BOSS STORE!` })
                     });
+                } else {
+                    showToast("Не удалось отправить данные в Telegram. Нет ID пользователя.");
                 }
+
+                // 2. Отправляем отчет АДМИНУ (ТЕБЕ)
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: ADMIN_ID, text: `👤 КУПИЛ: @${tgUser.username || '?'}\n🆔 ID: ${tgUser.id}\n🛒: ${activeItem.n}\n💰: ${activeItem.p} ₽` })
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: ADMIN_ID, text: `👤 НОВЫЙ ЗАКАЗ\n\nЮзер: @${tgUser.username || 'Неизвестный'}\nID: ${tgUser.id || 'Неизвестный'}\nТовар: ${activeItem.n}\nЦена: ${activeItem.p} ₽` })
                 });
+
+                // 3. Обновляем статус товара в базе данных
                 await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+                
                 showToast("ОПЛАЧЕНО! ПРОВЕРЬ БОТА");
                 closePay();
-            } catch (e) { showToast("ОШИБКА БОТА"); }
+            } catch (e) { 
+                console.error("Ошибка при отправке в Telegram:", e);
+                showToast("ОШИБКА БОТА. ПОПРОБУЙТЕ ЕЩЕ РАЗ."); 
+            }
         }
 
+        // --- ЛОГИКА СКРЕТЧ-КАРТЫ ---
         function initScr() {
-            const can = document.getElementById('can'); if(!can) return;
+            const can = document.getElementById('can');
+            if(!can) return; // Убедиться, что элемент canvas существует
+
+            const scrWrap = document.getElementById('scr-wrap');
+            can.width = scrWrap.offsetWidth;
+            can.height = scrWrap.offsetHeight;
+
             const ctx = can.getContext('2d');
-            can.width = can.offsetWidth; can.height = can.offsetHeight;
-            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,can.width,can.height);
-            ctx.fillStyle = '#FFD700'; ctx.font = '900 18px Montserrat'; ctx.textAlign = 'center'; ctx.fillText('STRETCH TO WIN', can.width/2, can.height/2 + 5);
+            ctx.fillStyle = '#1a1a1a'; // Обязательно заполняем непрозрачным цветом
+            ctx.fillRect(0, 0, can.width, can.height);
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '900 18px Montserrat';
+            ctx.textAlign = 'center';
+            ctx.fillText('STRETCH TO WIN', can.width / 2, can.height / 2 + 5);
+
             let active = false;
             const scratch = (e) => {
                 if(!active) return;
+                e.preventDefault(); // Предотвращаем скролл на мобильных устройствах
                 const r = can.getBoundingClientRect();
                 const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
                 const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI*2); ctx.fill();
-                const d = ctx.getImageData(0,0,can.width,can.height).data;
-                let t = 0; for(let i=3; i<d.length; i+=4) if(d[i]===0) t++;
-                if(t > (d.length/4) * 0.5) { can.remove(); animateLuck(); }
+                ctx.beginPath();
+                ctx.arc(x, y, 35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Проверяем процент стертой области
+                const d = ctx.getImageData(0, 0, can.width, can.height).data;
+                let transparentPixels = 0;
+                for (let i = 3; i < d.length; i += 4) {
+                    if (d[i] === 0) transparentPixels++; // Подсчет полностью прозрачных пикселей
+                }
+                if (transparentPixels > (d.length / 4) * 0.5) { // Если стерто более 50%
+                    can.remove(); // Удаляем canvas
+                    animateLuck(); // Запускаем анимацию скидки
+                    // Удаляем слушатели событий, чтобы не было ошибок
+                    can.removeEventListener('mousedown', startScratch);
+                    can.removeEventListener('touchstart', startScratch);
+                    window.removeEventListener('mousemove', scratch);
+                    window.removeEventListener('touchmove', scratch);
+                    window.removeEventListener('mouseup', endScratch);
+                    window.removeEventListener('touchend', endScratch);
+                }
             };
-            can.addEventListener('mousedown', () => active = true);
-            can.addEventListener('touchstart', () => active = true);
+
+            const startScratch = () => { active = true; };
+            const endScratch = () => { active = false; };
+
+            can.addEventListener('mousedown', startScratch);
+            can.addEventListener('touchstart', startScratch);
             window.addEventListener('mousemove', scratch);
             window.addEventListener('touchmove', scratch);
-            window.addEventListener('mouseup', () => active = false);
-            window.addEventListener('touchend', () => active = false);
+            window.addEventListener('mouseup', endScratch);
+            window.addEventListener('touchend', endScratch);
         }
 
         function animateLuck() {
             const el = document.getElementById('luck-val');
-            let c = 0, target = Math.floor(Math.random()*15)+5;
-            const t = setInterval(() => { c++; el.innerText = c+'%'; if(c>=target){ clearInterval(t); state.discount=target; state.lastLuck=Date.now(); save(); showToast(`СКИДКА ${target}%!`); } }, 50);
+            let c = 0;
+            const target = Math.floor(Math.random() * 3) + 1; // Скидка от 1% до 3%
+            const t = setInterval(() => { 
+                c++; 
+                el.innerText = c + '%'; 
+                if(c >= target) { 
+                    clearInterval(t); 
+                    state.discount = target; 
+                    state.lastLuck = Date.now(); 
+                    save(); 
+                    showToast(`ВЫБИТА СКИДКА ${target}%!`); 
+                    render('luck'); // Перерисовать страницу, чтобы отобразить статус
+                } 
+            }, 50);
         }
 
+        // --- ЛОГИКА АВТОРИЗАЦИИ (ШТОРКИ + ПРОФИЛИ SUPABASE) ---
+        function nextStep() {
+            if(!document.getElementById('up-login').value.trim() || !document.getElementById('up-email').value.trim()) {
+                return showToast("Заполните логин и Email!");
+            }
+            document.getElementById('up-step-1').classList.add('hidden');
+            document.getElementById('up-step-2').classList.remove('hidden');
+        }
+
+        async function auth(m) {
+            const e = document.getElementById(m==='in'?'in-email':'up-email').value.trim();
+            const p = document.getElementById(m==='in'?'in-pass':'up-pass').value.trim();
+            const l = m==='up' ? document.getElementById('up-login').value.trim() : '';
+            
+            if (!e || !p) { showToast("Заполните все поля!"); return; }
+
+            let authResult;
+            if (m === 'in') {
+                authResult = await sb.auth.signInWithPassword({ email: e, password: p });
+            } else { // 'up'
+                authResult = await sb.auth.signUp({ 
+                    email: e, 
+                    password: p, 
+                    options: { data: { user_name: l } } // Передаем логин в метаданные пользователя
+                });
+            }
+
+            if (authResult.error) {
+                let errorMessage = authResult.error.message.toUpperCase();
+                if (errorMessage.includes("USER ALREADY REGISTERED")) {
+                    showToast("УЖЕ ЕСТЬ АККАУНТ. ВОЙДИТЕ ВМЕСТО РЕГИСТРАЦИИ!");
+                    openSheet('in'); // Переключаем на форму входа
+                } else if (errorMessage.includes("EMAIL_NOT_CONFIRMED")) {
+                    showToast("ПОДТВЕРДИТЕ ПОЧТУ ПО ССЫЛКЕ В ПИСЬМЕ.");
+                } else {
+                    showToast(errorMessage);
+                }
+            } else if (authResult.data.user) {
+                if (m === 'up') { // Если это была регистрация, создаем запись в таблице 'profiles'
+                    const { error: profileError } = await sb.from('profiles').insert({
+                        id: authResult.data.user.id,
+                        email: authResult.data.user.email,
+                        user_name: l, 
+                        balance: 0,
+                        total_spent: 0
+                    });
+                    if (profileError) {
+                        console.error("Failed to create user profile:", profileError);
+                        showToast("ОШИБКА СОЗДАНИЯ ПРОФИЛЯ. СВЯЖИТЕСЬ С АДМИНОМ.");
+                        await sb.auth.signOut(); // Выходим, если профиль не создан
+                        return;
+                    }
+                }
+                showToast(m === 'in' ? "ВХОД УСПЕШЕН!" : "РЕГИСТРАЦИЯ УСПЕШНА!");
+                closeSheets();
+                location.reload(); // Перезагружаем страницу для обновления UI и получения данных профиля
+            } else {
+                showToast("ПРОВЕРЬТЕ ПОЧТУ ДЛЯ ПОДТВЕРЖДЕНИЯ (если требуется).");
+            }
+        }
+
+        // --- ВАУЧЕРЫ ---
+        async function applyV() {
+            const code = document.getElementById('v-in').value.trim();
+            if (!code) return showToast('Введите код ваучера!');
+
+            const { data: v, error: voucherError } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
+            if (voucherError || !v) return showToast('КОД ВАУЧЕРА НЕВЕРЕН ИЛИ УЖЕ ИСПОЛЬЗОВАН');
+
+            const { data: { user } } = await sb.auth.getUser();
+            if (!user) return showToast('СНАЧАЛА ВОЙДИТЕ В АККАУНТ');
+
+            const { data: prof, error: profileFetchError } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if (profileFetchError) {
+                console.error("Error fetching profile for voucher:", profileFetchError);
+                return showToast('ОШИБКА ПОЛУЧЕНИЯ ДАННЫХ ПРОФИЛЯ');
+            }
+
+            const { error: updateProfileError } = await sb.from('profiles').update({ balance: (prof?.balance || 0) + v.value }).eq('id', user.id);
+            const { error: updateVoucherError } = await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
+
+            if (updateProfileError || updateVoucherError) {
+                console.error("Error applying voucher:", updateProfileError || updateVoucherError);
+                showToast('ОШИБКА АКТИВАЦИИ ВАУЧЕРА');
+            } else {
+                showToast('ВАУЧЕР АКТИВИРОВАН! БАЛАНС ПОПОЛНЕН');
+                render('status'); // Перерисовать страницу профиля, чтобы показать новый баланс
+            }
+        }
+
+
+        // --- ОБЩИЕ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
         function openPay(n, p) { activeItem = {n, p}; document.getElementById('p-name').innerText = n; document.getElementById('p-total').innerText = p + ' ₽'; document.getElementById('m-pay').classList.remove('hidden'); }
         function closePay() { document.getElementById('m-pay').classList.add('hidden'); }
-        function nextStep() { document.getElementById('up-step-1').classList.add('hidden'); document.getElementById('up-step-2').classList.remove('hidden'); }
         function openSheet(id) { closeSheets(); document.getElementById('overlay').classList.add('open'); document.getElementById('sheet-' + id).classList.add('open'); }
         function closeSheets() { document.getElementById('overlay').classList.remove('open'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
-        async function auth(m) {
-            const e = document.getElementById(m==='in'?'in-email':'up-email').value;
-            const p = document.getElementById(m==='in'?'in-pass':'up-pass').value;
-            const { error } = m==='in' ? await sb.auth.signInWithPassword({email:e, password:p}) : await sb.auth.signUp({email:e, password:p});
-            if(error) showToast(error.message.toUpperCase()); else location.reload();
-        }
         function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
         function save() { localStorage.setItem('BOSS_V32', JSON.stringify(state)); }
-        render('shop');
+        // render('shop'); // Вызывается после загрузки
+        document.addEventListener('DOMContentLoaded', () => {
+            tg.ready();
+            tg.expand();
+            render('shop');
+        });
     </script>
 </body>
 </html>
