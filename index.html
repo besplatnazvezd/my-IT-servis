@@ -57,7 +57,7 @@
             <p id="p-total" class="text-4xl font-black text-yellow-500 mb-8">0.00 ₽</p>
             <div class="flex gap-3">
                 <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30">BACK</button>
-                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я ОПЛАТИЛ(А)</button>
+                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я ОПЛАТИЛА</button>
             </div>
         </div>
     </div>
@@ -80,7 +80,8 @@
         const ADMIN_ID = '7727345054';
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const user = tg.initDataUnsafe?.user || { id: 7727345054, username: 'boss_user' };
+        // Используем ID пользователя Telegram или ADMIN_ID как заглушку, если не в ТГ
+        const user = tg.initDataUnsafe?.user || { id: ADMIN_ID, username: 'GuestUser' }; 
         
         let currentLang = 'RU';
         let activeItem = null;
@@ -93,7 +94,8 @@
         function toggleLang() {
             currentLang = currentLang === 'RU' ? 'EN' : 'RU';
             document.getElementById('langBtn').innerText = currentLang;
-            document.getElementById('l-shop').innerText = langData[currentLang].shop;document.getElementById('l-info').innerText = langData[currentLang].info;
+            document.getElementById('l-shop').innerText = langData[currentLang].shop;
+            document.getElementById('l-info').innerText = langData[currentLang].info;
             document.getElementById('l-rev').innerText = langData[currentLang].rev;
             document.getElementById('l-stat').innerText = langData[currentLang].stat;
             document.getElementById('l-prom').innerText = langData[currentLang].prom;
@@ -109,58 +111,74 @@
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-' + page).classList.add('active');
+            
+            // Устанавливаем состояние загрузки
             app.innerHTML = '<p class="text-center opacity-20 animate-pulse mt-20">LOADING...</p>';
+
+            let renderedContent = ''; // Переменная для хранения готового HTML
+            let pageErrorMessage = null; // Для ошибок
 
             try {
                 if (page === 'shop') {
-                    const { data: products } = await sb.from('products').select('*');
-                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
+                    const { data: products, error } = await sb.from('products').select('*');
+                    if (error) { throw new Error(`Ошибка загрузки товаров: ${error.message}`); }
+                    
+                    renderedContent = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
                     <div class="grid grid-cols-2 gap-4 pb-10">
-                        ${(products || []).map(p => `
+                        ${(products && products.length > 0) ? products.map(p => `
                             <div class="boss-card flex flex-col h-full">
-                                <img src="${p.image_url}" class="w-full aspect-square object-cover">
+                                <img src="${p.image_url}" class="w-full aspect-square object-cover" onerror="this.src='https://via.placeholder.com/150/111/white?text=BOSS'; this.alt='Image not available'">
                                 <div class="p-4 flex-1 flex flex-col justify-between">
                                     <div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate">${p.name}</h3>
                                     <p class="text-sm font-black italic mt-1">${parseFloat(p.price).toFixed(2)} ₽</p></div>
                                     <button onclick="openPay('${p.name}', ${p.price})" class="btn-gold w-full py-3 text-[10px] mt-4">${langData[currentLang].shop}</button>
                                 </div>
-                            </div>`).join('')}
+                            </div>`).join('') : '<p class="text-center opacity-50 col-span-2 mt-10">ТОВАРЫ НЕ НАЙДЕНЫ.</p>'}
                     </div>`;
                 }
 
-                if (page === 'reviews') {
-                    const { data: reviews } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].rev}</h1>
+                else if (page === 'reviews') {
+                    const { data: reviews, error } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
+                    if (error) { throw new Error(`Ошибка загрузки отзывов: ${error.message}`); }
+
+                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].rev}</h1>
                     <div class="space-y-4 pb-10">
-                        ${(reviews || []).map(r => `
+                        ${(reviews && reviews.length > 0) ? reviews.map(r => `
                             <div class="boss-card p-5">
                                 <div class="text-yellow-500 font-black text-[9px] mb-2 uppercase">${r.user_email || 'CLIENT'}</div>
                                 <div class="text-[11px] opacity-70 italic">${r.text || r.content}</div>
-                            </div>`).join('')}
+                                </div>`).join('') : '<p class="text-center opacity-50 mt-10">ОТЗЫВОВ ПОКА НЕТ.</p>'}
                     </div>`;
                 }
 
-                if (page === 'info') {
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].info}</h1>
+                else if (page === 'info') {
+                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].info}</h1>
                     <div class="boss-card p-6 text-[12px] leading-relaxed opacity-80">
                         Здесь ваша инструкция... <br><br>
-                        <a href="https://google.com" class="text-yellow-500 font-bold underline">ССЫЛКА НА ИНСТРУКЦИЮ</a>
+                        <a href="https://google.com" class="text-yellow-500 font-bold underline" target="_blank">ССЫЛКА НА ИНСТРУКЦИЮ</a>
                     </div>`;
                 }
 
-                if (page === 'status') {
+                else if (page === 'status') {
                     // Автоматически создаем или получаем профиль
-                    let { data: prof } = await sb.from('profiles').select('*').eq('id', user.id).single();
-                    if(!prof) {
-                        const { data: newProf } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, discount: 0}).select().single();
+                    let { data: prof, error: profFetchError } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                    if (profFetchError && profFetchError.code !== 'PGRST116') { // PGRST116 = "no rows found", это не ошибка, а отсутствие профиля
+                        throw new Error(`Ошибка при загрузке профиля: ${profFetchError.message}`);
+                    }
+
+                    if (!prof) {
+                        const { data: newProf, error: profInsertError } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, discount: 0}).select().single();
+                        if (profInsertError) { throw new Error(`Ошибка при создании профиля: ${profInsertError.message}`); }
                         prof = newProf;
                     }
-                    const { data: orders } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
+                    
+                    const { data: orders, error: ordersError } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
+                    if (ordersError) { throw new Error(`Ошибка при загрузке заказов: ${ordersError.message}`); }
                     
                     const spent = prof?.total_spent || 0;
                     const progress = Math.min((spent / 100000) * 100, 100);
 
-                    app.innerHTML = `
+                    renderedContent = `
                     <div class="vip-card">
                         <div class="vip-title">BOSS VIP STATUS</div>
                         <div class="mt-6">
@@ -178,15 +196,15 @@
                         </div>
                         <div class="text-[9px] text-gray-500 font-black mt-10 mb-4 uppercase">История покупок:</div>
                         <div class="space-y-2">
-                            ${(orders || []).map(o => `
+                            ${(orders &&orders.length > 0) ? orders.map(o => `
                                 <div class="history-row"><span>${o.product_name}</span><b>${parseFloat(o.price).toFixed(2)} ₽</b></div>
-                            `).join('') || '<p class="opacity-20 text-[10px]">НЕТ ПОКУПОК</p>'}
+                            `).join('') : '<p class="opacity-20 text-[10px]">НЕТ ПОКУПОК</p>'}
                         </div>
                     </div>`;
                 }
 
-                if (page === 'promo') {
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].prom}</h1>
+                else if (page === 'promo') {
+                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].prom}</h1>
                     <div class="space-y-4">
                         <input id="v-code" placeholder="КОД ВАУЧЕРА" class="w-full p-5 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold text-white">
                         <button onclick="applyV()" class="btn-gold w-full py-5 text-sm">АКТИВИРОВАТЬ</button>
@@ -194,12 +212,18 @@
                 }
 
             } catch (e) {
-                app.innerHTML = `<p class="text-center text-red-500">ОШИБКА ЗАГРУЗКИ. ПРОВЕРЬТЕ ТАБЛИЦЫ.</p>`;
+                // Если произошла ошибка, выводим её в консоль и на экран
+                console.error(`Render Error for page ${page}:`, e);
+                pageErrorMessage = e.message || 'НЕИЗВЕСТНАЯ ОШИБКА';
+                renderedContent = `<p class="text-center text-red-500 mt-20">ОШИБКА: ${pageErrorMessage}</p><p class="text-center text-red-400 text-sm mt-2">Проверьте консоль разработчика и RLS политики в Supabase.</p>`;
+            } finally {
+                // В любом случае обновляем содержимое страницы
+                app.innerHTML = renderedContent;
             }
         }
 
         function openPay(n, p) { activeItem = {n, p}; document.getElementById('p-name').innerText = n; document.getElementById('p-total').innerText = parseFloat(p).toFixed(2) + ' ₽'; document.getElementById('m-pay').style.display = 'flex'; }
-        function closePay() { document.getElementById('m-pay').style.display ='none'; }
+        function closePay() { document.getElementById('m-pay').style.display = 'none'; }
         
         async function processPurchase() {
             try {
@@ -221,7 +245,24 @@
                 await sb.from('profiles').update({total_spent: (p?.total_spent || 0) + activeItem.p}).eq('id', user.id);
 
                 showToast("УСПЕШНО!"); closePay(); render('status');
-            } catch(e) { showToast("ОШИБКА"); }
+            } catch(e) { showToast("ОШИБКА!"); console.error("Purchase error:", e); }
+        }
+        
+        async function applyV() {
+            const code = document.getElementById('v-code').value.trim();
+            if (!code) { showToast("Введите код!"); return; }
+
+            const { data: voucher, error: voucherError } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
+            if (voucherError || !voucher) { showToast("Код неверный или уже использован!"); return; }
+
+            const { data: profile, error: profileError } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            if (profileError) { showToast("Ошибка получения профиля!"); return; }
+
+            await sb.from('profiles').update({ balance: (profile?.balance || 0) + voucher.value }).eq('id', user.id);
+            await sb.from('vouchers').update({ is_used: true }).eq('id', voucher.id);
+
+            showToast("Ваучер активирован!");
+            render('status'); // Перерисовать страницу статуса для обновления баланса
         }
 
         function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
@@ -230,3 +271,5 @@
     </script>
 </body>
 </html>
+                                
+        
