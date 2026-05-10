@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BOSS STORE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #FFD700; --bg: #000; --card: #111111; }
+        body { 
+            font-family: 'Montserrat', sans-serif; background: var(--bg); color: #fff; margin: 0; 
+            padding-bottom: 110px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; 
+        }
+        .boss-card { 
+            background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); 
+            overflow: hidden; position: relative; 
+        }
+        .btn-gold { 
+            background: linear-gradient(180deg, #FFD700 0%, #BA8B02 100%); color: #000; 
+            font-weight: 900; text-transform: uppercase; border-radius: 14px; 
+        }
+        .nav-bar { 
+            position: fixed; bottom: 0; width: 100%; background: rgba(5,5,5,0.98); 
+            backdrop-filter: blur(15px); border-top: 1px solid rgba(255,215,0,0.1); 
+            padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; 
+        }
+        .nav-item { 
+            color: #444; font-size: 8px; font-weight: 800; text-transform: uppercase; 
+            display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; 
+        }
+        .nav-item.active { color: var(--gold); }
+        
+        /* Стили Профиля как на скрине */
+        .vip-card { background: #0d0d0d; border: 1px solid #1a1a1a; padding: 25px; border-radius: 24px; }
+        .vip-title { color: var(--gold); font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: 2px; }
+        .progress-container { margin: 25px 0; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; margin-bottom: 8px; }
+        .progress-line { height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--gold); width: 0%; box-shadow: 0 0 10px var(--gold); }
+              .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px; }
+        .stat-item label { font-size: 8px; color: #444; font-weight: 900; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .stat-item span { font-size: 12px; font-weight: 900; }
+        
+        .history-title { font-size: 9px; color: #444; font-weight: 900; text-transform: uppercase; margin: 30px 0 15px; }
+        .history-row { 
+            background: #161616; padding: 15px 20px; border-radius: 15px; 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .history-row span { font-size: 11px; font-weight: 800; }
+        .history-row b { color: var(--gold); font-size: 11px; }
+
+        .modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; 
+            display: none; align-items: center; justify-content: center; padding: 20px; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase"></div>
+
+    <!-- ОПЛАТА -->
+    <div id="m-pay" class="modal">
+        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505]">
+            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-left mb-6">
+                <p class="text-[8px] opacity-40 font-black uppercase mb-1">Т-Банк / СБП</p>
+                <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
+            </div>
+            <div class="mb-8 text-center">
+                <p class="text-[10px] font-black opacity-30 uppercase">К оплате:</p>
+                <p id="p-total" class="text-4xl font-black text-yellow-500">0.00 ₽</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase">Назад</button>
+                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я оплатил(а)</button>
+            </div>
+        </div>
+    </div>
+      <!-- УСПЕХ -->
+    <div id="m-success" class="modal">
+        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505]">
+            <h2 class="text-yellow-500 font-black uppercase text-2xl italic mb-4">Успешно!</h2>
+            <p id="success-item" class="text-sm opacity-60 mb-8"></p>
+            <button onclick="contactManager()" class="btn-gold w-full py-5 text-[10px] mb-4">Я ДОВОЛЕН, СВЯЖИСЬ СО МНОЙ</button>
+            <button onclick="closeSuccess()" class="opacity-30 text-[9px] font-black uppercase">Закрыть</button>
+        </div>
+    </div>
+
+    <main id="app" class="px-4 pt-6"></main>
+
+    <nav class="nav-bar">
+        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span>Шоп</span></div>
+        <div onclick="render('info')" id="n-info" class="nav-item">📖<span>Инструкция</span></div>
+        <div onclick="render('status')" id="n-status" class="nav-item">👤<span>Статус</span></div>
+        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span>Ваучер</span></div>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKaNeHKaQMA_1YJQzu1C';
+        const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
+        const ADMIN_ID = '7727345054';
+
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+      const tgUser = tg.initDataUnsafe?.user || { id: 12345, username: 'Guest' }; // Для теста, если не в ТГ
+        let activeItem = null;
+
+        async function render(page) {
+            const app = document.getElementById('app');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('n-' + page).classList.add('active');
+            app.innerHTML = '';
+
+            if (page === 'shop') {
+                app.innerHTML = `<h1 class="text-xl font-black italic text-yellow-500 uppercase text-center mb-6">BOSS STORE</h1><div id="grid" class="grid grid-cols-2 gap-4 pb-10"></div>`;
+                const { data: prods } = await sb.from('products').select('*');
+                document.getElementById('grid').innerHTML = (prods || []).map(p => `
+                    <div class="boss-card flex flex-col h-full bg-[#0d0d0d]">
+                        <img src="${p.image_url}" class="w-full aspect-square object-cover">
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-[10px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3>
+                                <p class="text-sm font-black italic text-white">${p.price.toFixed(2)} ₽</p>
+                            </div>
+                            <button onclick="openPay('${p.name}', ${p.price})" class="btn-gold w-full py-3 text-[10px] mt-4">КУПИТЬ</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            else if (page === 'info') {
+                app.innerHTML = `
+                    <div class="pt-6">
+                        <h2 class="text-yellow-500 font-black italic uppercase text-xl mb-8">Инструкция</h2>
+                        <div class="boss-card p-6 text-[11px] leading-relaxed opacity-80">
+                            Здесь твой текст инструкции... <br><br>
+                            <a href="#" class="text-yellow-500 underline font-bold">ССЫЛКА НА ТЕЛЕГРАФ</a>
+                        </div>
+                    </div>`;
+            }
+
+            else if (page === 'status') {
+                // Получаем данные профиля и заказов из Supabase
+                const { data: prof } = await sb.from('profiles').select('*').eq('id', ADMIN_ID).single(); 
+                const { data: orders } = await sb.from('orders').select('*').order('created_at', {ascending: false});
+                
+                const spent = prof?.total_spent || 0;
+                const progress = Math.min((spent / 100000) * 100, 100);
+
+                app.innerHTML = `
+                    <div class="vip-card">
+                        <div class="vip-title">BOSS VIP STATUS</div>
+                        <div class="progress-container">
+                            <div class="progress-text">
+                                <span>PROGRESS TO 100K</span>
+                                <span>${spent.toFixed(2)} / 100 000 ₽</span>
+                            </div>
+                            <div class="progress-line"><div class="progress-fill" style="width: ${progress}%"></div></div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-item"><label>ID КЛИЕНТА</label><span>${tgUser.id}</span></div>
+                            <div class="stat-item"><label>ЮЗЕР</label><span>@${tgUser.username || 'unknown'}</span></div>
+                            <div class="stat-item"><label>СКИДКА</label><span>${prof?.discount || 0}%</span></div>
+                            <div class="stat-item"><label>РЕГ</label><span>21.04.2026</span></div>
+                        </div>
+                        <div class="history-title">История покупок:</div>
+                        <div id="h-list">
+                            ${(orders || []).map(o => `
+                                <div class="history-row">
+                                    <span>${o.product_name}</span>
+                                    <b>${o.price.toFixed(2)} ₽</b>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            else if (page === 'promo') {
+                app.innerHTML = `<div class="pt-10"><h2 class="text-yellow-500 font-black text-center mb-8 uppercase italic">Ваучер</h2><input id="v-in" placeholder="КОД ВАУЧЕРА" class="bg-[#1a1a1a] border border-white/5 w-full p-5 rounded-2xl mb-4 text-white outline-none"><button onclick="applyV()" class="btn-gold w-full py-5 text-sm">Активировать</button></div>`;
+            }
+        }
+
+        async function processPurchase() {
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
+            if(!acc) return showToast("ТОВАР ЗАКОНЧИЛСЯ");
+            
+            try {
+                // 1. Клиенту
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({chat_id: tgUser.id, text: `📦 ЗАКАЗ: ${activeItem.n}\n🔑 ДАННЫЕ: ${acc.data}\nСпасибо за покупку!`})
+                });
+                // 2. Админу
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({chat_id: ADMIN_ID, text: `💰 НОВЫЙ ЧЕК\nЮзер: @${tgUser.username}\nТовар: ${activeItem.n}\nЦена: ${activeItem.p} ₽`})
+                });
+                
+                await sb.from('accounts_data').update({is_sold: true}).eq('id', acc.id);
+                await sb.from('orders').insert({ user_id: ADMIN_ID, product_name: activeItem.n, price: activeItem.p });
+
+                closePay();
+                document.getElementById('success-item').innerText = activeItem.n;
+                document.getElementById('m-success').style.display = 'flex';
+            } catch(e) { showToast("ОШИБКА"); }
+        }
+
+        function contactManager() {
+            window.location.href = `https://t.me/share/url?url=https://t.me/id${ADMIN_ID}&text=${encodeURIComponent("Я ДОВОЛЕН, СВЯЖИСЬ СО МНОЙ. Я купил: " + activeItem.n)}`;
+        }
+
+        function openPay(n, p) { activeItem = {n, p}; document.getElementById('p-name').innerText = n; document.getElementById('p-total').innerText = p.toFixed(2) + ' ₽'; document.getElementById('m-pay').style.display = 'flex'; }
+        function closePay() { document.getElementById('m-pay').style.display = 'none'; }
+        function closeSuccess() { document.getElementById('m-success').style.display = 'none'; render('shop'); }
+        function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
+
+        document.addEventListener('DOMContentLoaded', () => { tg.ready(); tg.expand(); render('shop'); });
+    </script>
+</body>
+</html>
+  
+    
