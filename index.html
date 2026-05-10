@@ -2,258 +2,200 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOSS STORE | PREMIUM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BOSS STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: #111111; --text: #ffffff; --accent: #2563eb; --border: rgba(255,255,255,0.1); }
-        .light-mode { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --border: rgba(0,0,0,0.05); }
+        :root { --gold: #FFD700; --bg: #000; --card: #0d0d0d; --neon: #ff00ff; }
+        .light-mode { --bg: #f0f0f0; --card: #ffffff; --text: #000; --border: #ddd; }
         
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; margin: 0; }
-        .boss-font { font-family: 'Syncopate', sans-serif; }
-        .boss-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; transition: 0.2s; overflow: hidden; }
-        .boss-card:hover { border-color: var(--accent); }
-        
-        /* Боковое меню */
-        #side-menu { position: fixed; top: 0; right: -100%; width: 300px; height: 100%; background: var(--card); z-index: 1000; transition: 0.4s; border-left: 1px solid var(--border); box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
-        #side-menu.open { right: 0; }
-        .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 900; backdrop-filter: blur(4px); }
-        .menu-overlay.open { display: block; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 110px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; transition: 0.3s; }
+        body.light-mode { color: #000; }
 
-        .btn-main { background: var(--accent); color: white; font-weight: 800; border-radius: 10px; transition: 0.2s; }
-        .btn-main:active { transform: scale(0.95); }
+        .neon-frame { position: fixed; inset: 0; border: 3px solid var(--neon); box-shadow: inset 0 0 15px var(--neon), 0 0 15px var(--neon); z-index: 9998; pointer-events: none; display: none; opacity: 0.6; animation: breathe 1.5s infinite ease-in-out; }
+        @keyframes breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        .promo-active .neon-frame { display: block; }
+
+        .boss-card { background: var(--card); border-radius: 18px; border: 1px solid rgba(255, 215, 0, 0.08); overflow: hidden; position: relative; transition: 0.4s; }
+        .btn-gold { background: linear-gradient(180deg, #FFD700 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 12px; }
         
-        input { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); outline: none; padding: 12px; border-radius: 12px; }
-        .section-hidden { display: none; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: rgba(5,5,5,0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,215,0,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
+        .nav-item { color: #444; font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; transition: 0.3s; }
+        .nav-item.active { color: var(--gold); }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 20000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .hidden { display: none !important; }
+                input { background: #1a1a1a !important; border: 1px solid rgba(255,215,0,0.2) !important; border-radius: 12px; padding: 14px; color: #fff; font-weight: 900; text-align: center; outline: none; width: 100%; }
+        .cat-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0 20px; scrollbar-width: none; }
+        .cat-item { white-space: nowrap; font-size: 9px; font-weight: 900; color: #333; text-transform: uppercase; transition: 0.3s; }
+        .cat-item.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
     </style>
 </head>
-<body>
+<body id="b-tag">
 
-    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="neon-frame"></div>
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[30000] hidden uppercase">Скопировано</div>
 
-    <!-- ШАПКА -->
-    <nav class="sticky top-0 z-50 bg-inherit border-b border-white/5 p-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="boss-font text-lg font-bold tracking-tighter text-blue-600 cursor-pointer" onclick="showSection('shop')">BOSSSTORE</div>
-            <div class="flex items-center gap-4">
-                                <button onclick="toggleTheme()" class="text-lg">🌓</button>
-                <!-- ТРИ ПОЛОСКИ -->
-                <button onclick="toggleMenu()" class="flex flex-col gap-1.5 items-end">
-                    <div class="w-6 h-0.5 bg-current"></div>
-                    <div class="w-6 h-0.5 bg-current"></div>
-                    <div class="w-4 h-0.5 bg-blue-600"></div>
-                </button>
+    <main id="app" class="px-4 pt-6"></main>
+
+    <!-- Окно покупки -->
+    <div id="m-pay" class="modal hidden">
+        <div class="boss-card w-full max-w-sm p-6 text-center bg-[#0a0a0a]">
+            <h2 id="p-name" class="text-yellow-500 font-black italic uppercase mb-6 text-xl italic"></h2>
+            
+            <!-- Реквизиты (Твои старые) -->
+            <div class="space-y-2 mb-6 text-left">
+                <div onclick="copy('+79501700787')" class="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <p class="text-[7px] opacity-40 font-black uppercase">💛 Т-Банк / СБП</p>
+                    <p class="font-bold text-yellow-500 text-sm">+7 950 170 07 87</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-[9px] font-black opacity-40 uppercase">К оплате:</p>
+                <p id="p-total" class="text-2xl font-black text-yellow-500">0.00 ₽</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeM()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase">НАЗАД</button>
+                <button onclick="order()" class="w-2/3 btn-gold py-4 text-[10px]">Я ОПЛАТИЛ(А)</button>
             </div>
         </div>
+    </div>
+
+    <!-- Навигация -->
+    <nav class="nav-bar">
+        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span>Шоп</span></div>
+                <div onclick="render('luck')" id="n-luck" class="nav-item">🎰<span>Удача</span></div>
+        <div onclick="render('news')" id="n-news" class="nav-item">📰<span>Статьи</span></div>
+        <div onclick="render('status')" id="n-status" class="nav-item">👤<span>Профиль</span></div>
+        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span>Ваучер</span></div>
     </nav>
 
-    <!-- ОСНОВНОЙ КОНТЕНТ -->
-    <main class="max-w-6xl mx-auto p-4">
-        
-        <!-- СЕКЦИЯ: МАГАЗИН -->
-        <div id="sec-shop" class="section">
-            <header class="my-10">
-                <h1 id="hero-text" class="text-4xl md:text-6xl font-black italic uppercase leading-none mb-6">EXCLUSIVE<br><span class="text-blue-600">ACCESS</span></h1>
-                <input type="text" id="search" oninput="doSearch()" placeholder="Поиск товара..." class="w-full text-sm">
-            </header>
-            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="col-span-full text-center py-20 opacity-20 italic">Загрузка товаров...</div>
-            </div>
-        </div>
-
-        <!-- СЕКЦИЯ: СТАТЬИ -->
-        <div id="sec-news" class="section section-hidden">
-            <h2 class="text-3xl font-black italic uppercase mb-8">Articles</h2>
-            <div id="news-list" class="grid gap-4"></div>
-        </div>
-
-        <!-- СЕКЦИЯ: ОТЗЫВЫ -->
-        <div id="sec-reviews" class="section section-hidden">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-black italic uppercase">Reviews</h2>
-                <button onclick="bossAlert('Функция добавления скоро будет!', '✍️')" class="btn-main px-4 py-2 text-[10px]">Добавить</button>
-            </div>
-            <div id="reviews-list" class="grid gap-4"></div>
-        </div>
-
-    </main>
-
-    <!-- БОКОВОЕ МЕНЮ (ПРОФИЛЬ) -->
-    <div id="side-menu" class="p-8">
-        <div class="flex justify-between items-center mb-10">
-            <span class="boss-font text-xs opacity-40">BOSS TERMINAL</span>
-            <button onclick="toggleMenu()" class="text-2xl">✕</button>
-                    </div>
-
-        <!-- Если не вошел -->
-        <div id="auth-box" class="space-y-4">
-            <input id="email" type="email" placeholder="Email" class="w-full text-xs">
-            <input id="pass" type="password" placeholder="Password" class="w-full text-xs">
-            <button onclick="handleAuth('login')" class="w-full btn-main p-4 text-xs uppercase italic">Войти</button>
-            <button onclick="handleAuth('signup')" class="w-full border border-white/10 p-3 rounded-xl text-[9px] uppercase font-bold opacity-50">Регистрация</button>
-            <button onclick="resetPassword()" class="w-full text-center text-[9px] opacity-30 uppercase font-black">Забыли пароль?</button>
-        </div>
-
-        <!-- Если вошел -->
-        <div id="user-box" class="hidden space-y-8">
-            <div>
-                <p class="text-[9px] opacity-40 uppercase font-black mb-1">My Balance</p>
-                <h3 id="bal-display" class="text-4xl font-black text-blue-600 italic">0 ₽</h3>
-            </div>
-            <nav class="flex flex-col gap-5 text-xs font-black uppercase tracking-widest italic">
-                <button onclick="showSection('shop')" class="text-left hover:text-blue-600">📦 Магазин</button>
-                <button onclick="showSection('news')" class="text-left hover:text-blue-600">📄 Статьи</button>
-                <button onclick="showSection('reviews')" class="text-left hover:text-blue-600">⭐ Отзывы</button>
-                <button onclick="openVoucher()" class="text-left text-blue-400">💰 Пополнить</button>
-                <div class="flex gap-4 pt-4 border-t border-white/5">
-                    <button onclick="changeLang('ru')">RU</button>
-                    <button onclick="changeLang('en')">EN</button>
-                </div>
-                <button onclick="logout()" class="text-left text-red-600 mt-10">Выйти</button>
-            </nav>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ВМЕСТО ALERT -->
-    <div id="boss-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-[2000] p-6">
-        <div class="boss-card p-8 w-full max-w-xs text-center border-blue-600/30">
-            <div id="m-icon" class="text-5xl mb-4">💡</div>
-            <p id="m-text" class="text-sm font-bold mb-6 italic"></p>
-            <button onclick="closeModal('boss-modal')" class="w-full btn-main p-4 text-xs uppercase italic">Принято</button>
-        </div>
-    </div>
-
     <script>
-        // --- ПОДКЛЮЧЕНИЕ (ВСТАВЬ СВОИ ДАННЫЕ) ---
-        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'.trim();
-        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'.trim();
-        const TG_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
-        const TG_CHAT_ID = '7727345054';
-        
+        const tg = window.Telegram.WebApp;
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
+        const BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
+        const ADMIN_ID = '7727345054';
+
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let products = [];
+        tg.ready(); tg.expand();
 
-        // --- ЛОГИКА ИНТЕРФЕЙСА ---
-        function toggleMenu() {
-            document.getElementById('side-menu').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('open');
-        }
+        let state = JSON.parse(localStorage.getItem('BOSS_V32')) || { discount: 0, lastLuck: 0, lang: 'ru', theme: 'dark' };
+        let products = [], curCat = 'BCE', activeItem = null, user = null;
 
-        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+        // --- ГЛАВНЫЙ РЕНДЕР ---
+        async function render(page) {
+            const app = document.getElementById('app');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('n-' + page).classList.add('active');
 
-        function showSection(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.add('section-hidden'));
-            document.getElementById(`sec-${id}`).classList.remove('section-hidden');
-            if(id === 'news') loadNews();
-            if(id === 'reviews') loadReviews();
-            toggleMenu();
-        }
-
-        function bossAlert(text, icon = '💡') {
-            document.getElementById('m-text').innerText = text;
-            document.getElementById('m-icon').innerText = icon;
-            document.getElementById('boss-modal').classList.replace('hidden', 'flex');
-        }
-
-        function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
-
-        // --- ЗАГРУЗКА ДАННЫХ ---
-        async function loadProducts() {
-            const { data, error } = await sb.from('products').select('*');
-            if(error) return bossAlert('Ошибка базы: ' + error.message, '❌');
-            products = data || [];
-            renderProducts(products);
-        }
-
-        function renderProducts(list) {
-            const grid = document.getElementById('products-grid');
-            if(list.length === 0) { grid.innerHTML = '<p class="col-span-full opacity-30 text-center">Товаров пока нет.</p>'; return; }
-            grid.innerHTML = list.map(p => `
-                <div class="boss-card p-4 flex flex-col justify-between">
-                    <div class="mb-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[7px] font-black text-blue-600 uppercase italic">Premium</span>
-                            <span class="text-xs font-black italic">${p.price} ₽</span>
-                        </div>
-                        <h3 class="text-[10px] font-black uppercase italic truncate leading-tight">${p.name}</h3>
-                    </div>
-                    <button onclick="buyItem('${p.name}', ${p.price})" class="btn-main w-full py-2 text-[9px] uppercase italic">Get Access</button>
-                    </div>
-            `).join('');
-        }
-
-        function doSearch() {
-            const q = document.getElementById('search').value.toLowerCase();
-            renderProducts(products.filter(p => p.name.toLowerCase().includes(q)));
-        }
-
-        // --- БИЗНЕС ЛОГИКА ---
-        async function handleAuth(type) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
-            const { error } = type === 'login' 
-                ? await sb.auth.signInWithPassword({ email, password })
-                : await sb.auth.signUp({ email, password });
-            if(error) bossAlert(error.message, '❌'); else location.reload();
-        }
-
-        async function buyItem(name, price) {
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) { toggleMenu(); return; }
-
-            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            if(prof.balance < price) return bossAlert('Недостаточно BOSS-баланса!', '💸');
-
-            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', name).eq('is_sold', false).limit(1).single();
-            if(!acc) return bossAlert(`Товар "${name}" закончился в базе!`, '⏳');
-
-            await sb.from('profiles').update({ balance: prof.balance - price }).eq('id', user.id);
-            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-
-            bossAlert(`УСПЕШНО!\nДанные: ${acc.data}`, '💎');
-            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent('BOSS BUY: '+name+'\nData: '+acc.data)}`);
-            updateUI();
-        }
-
-        async function updateUI() {
-            const { data: { user } } = await sb.auth.getUser();
-            if(user) {
-                document.getElementById('auth-box').classList.add('hidden');
-                document.getElementById('user-box').classList.remove('hidden');
-                const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-                document.getElementById('bal-display').innerText = `${prof?.balance || 0} ₽`;
+            if (page === 'shop') {
+                app.innerHTML = `<h1 class="text-xl font-black italic text-yellow-500 uppercase text-center mb-2">BOSS STORE</h1><div class="cat-scroll" id="cat-bar"></div><div id="grid" class="grid grid-cols-2 gap-4 pb-10"></div>`;
+                if(products.length === 0) {
+                    const { data } = await sb.from('products').select('*');
+                    products = data || [];
+                }
+                const cats = ['BCE', ...new Set(products.map(p => p.category))];
+                document.getElementById('cat-bar').innerHTML = cats.map(c => `<div onclick="setCat('${c}')" class="cat-item ${curCat===c?'active':''}">${c}</div>`).join('');
+                setCat(curCat);
+            } 
+            
+            else if (page === 'status') {
+                const { data: { session } } = await sb.auth.getSession();
+                if(!session) {
+                    app.innerHTML = `<div class="space-y-4 pt-10"><input id="reg-login" placeholder="ЛОГИН"><input id="reg-email" placeholder="EMAIL"><input id="reg-pass" type="password" placeholder="ПАРОЛЬ"><button onclick="auth('up')" class="btn-gold w-full py-4 text-xs">РЕГИСТРАЦИЯ</button><button onclick="auth('in')" class="opacity-40 w-full text-[10px] uppercase font-bold">ВХОД</button><button onclick="resetP()" class="opacity-20 w-full text-[8px] uppercase">Забыли пароль?</button></div>`;
+                } else {
+                    const { data: prof } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+                    app.innerHTML = `<div class="boss-card p-6 text-center"><p class="text-[10px] opacity-40 mb-2 uppercase font-black">Ваш баланс</p><h2 class="text-5xl font-black text-yellow-500 italic mb-10">${prof.balance} ₽</h2><div class="grid grid-cols-2 gap-4"><button onclick="toggleTheme()" class="bg-white/5 p-4 rounded-xl text-[10px] uppercase font-bold">Тема 🌓</button><button onclick="changeL()" class="bg-white/5 p-4 rounded-xl text-[10px] uppercase font-bold">Язык: ${state.lang.toUpperCase()}</button></div><button onclick="sb.auth.signOut().then(()=>location.reload())" class="mt-10 text-red-500 text-[10px] font-bold uppercase">Выйти</button></div>`;
+                }
             }
+
+            else if (page === 'news') {
+                const { data } = await sb.from('articles').select('*');
+                app.innerHTML = `<h2 class="text-yellow-500 font-black text-center text-xl mb-8 uppercase italic">Статьи BOSS</h2><div class="space-y-4">${data.map(n => `<div class="boss-card p-5"><h4 class="text-yellow-500 font-black text-xs uppercase mb-2">${n.title}</h4><p class="text-[10px] opacity-60 leading-relaxed">${n.content}</p></div>`).join('')}</div>`;
+            }
+
+            else if (page === 'promo') {
+                app.innerHTML = `<div class="pt-6"><h2 class="text-yellow-500 font-black text-center mb-8 uppercase italic">Активация Ваучера</h2><input id="v-in" placeholder="ВВЕДИТЕ КОД"><button onclick="applyV()" class="btn-gold w-full py-4 mt-4 text-xs">АКТИВИРОВАТЬ</button></div>`;
+            }
+            
+            else if (page === 'luck') { /* Твой старый код скретча */ app.innerHTML = `<div class="text-center pt-10"><h2 class="text-yellow-500 font-black italic text-xl uppercase mb-10">Скретч-карта</h2><div id="scr-wrap" class="mx-auto bg-[#111] rounded-3xl relative overflow-hidden" style="width:300px;height:180px;"><canvas id="can" style="position:absolute;inset:0;"></canvas><div class="flex items-center justify-center h-full text-4xl font-black text-yellow-500">${state.discount}% СКИДКА</div></div></div>`; initScr(); }
         }
 
-        async function loadNews() {
-            const { data } = await sb.from('articles').select('*');
-            document.getElementById('news-list').innerHTML = (data || []).map(n => `
-                <div class="boss-card p-5">
-                    <h4 class="font-black text-blue-600 uppercase italic mb-2">${n.title}</h4>
-                    <p class="text-xs opacity-50">${n.content}</p>
+        // --- ЛОГИКА ---
+        function setCat(c) {
+            curCat = c;
+            const grid = document.getElementById('grid');
+            const filt = c === 'BCE' ? products : products.filter(p => p.category === c);
+            grid.innerHTML = filt.map(p => `
+                <div class="boss-card flex flex-col h-full">
+                    <img src="${p.img}" class="w-full aspect-square object-cover opacity-80">
+                    <div class="p-3 flex-1 flex flex-col">
+                        <h3 class="text-[9px] font-black text-yellow-500 uppercase truncate mb-1">${p.name}</h3>
+                        <p class="text-[10px] font-black italic mb-4">${p.price} ₽</p>
+                        <button onclick="openPay('${p.name}', ${p.price})" class="mt-auto btn-gold w-full py-2 text-[9px]">КУПИТЬ</button>
+                    </div>
                 </div>
             `).join('');
         }
 
-        async function loadReviews() {
-            const { data } = await sb.from('reviews').select('*');
-            document.getElementById('reviews-list').innerHTML = (data || []).map(r => `
-                <div class="boss-card p-4 italic text-xs">"${r.text}"</div>
-            `).join('');
+        async function auth(mode) {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const login = document.getElementById('reg-login').value;
+            if(mode === 'up') await sb.auth.signUp({ email, password: pass, options: { data: { user_name: login } } });
+            else await sb.auth.signInWithPassword({ email, password: pass });
+            location.reload();
         }
 
-        function changeLang(l) {
-            document.getElementById('hero-text').innerHTML = l === 'ru' ? 'EXCLUSIVE<br><span class="text-blue-600">ACCESS</span>' : 'PREMIUM<br><span class="text-blue-600">ACCESS</span>';
-            bossAlert(l === 'ru' ? 'Язык изменен' : 'Language updated');
+        async function applyV() {
+            const code = document.getElementById('v-in').value.trim();
+            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
+            if(!v) return copy('Ошибка кода!');
+            const { data: { user } } = await sb.auth.getUser();
+            const { data: prof } = await sb.from('profiles').select('balance').eq('id', user.id).single();
+            await sb.from('profiles').update({ balance: prof.balance + v.value }).eq('id', user.id);
+            await sb.from('vouchers').update({ is_used: true }).eq('id', v.id);
+            render('status');
         }
 
-        function logout() { sb.auth.signOut().then(() => location.reload()); }
+        async function order() {
+            const { data: { user: u } } = await sb.auth.getUser();
+            if(!u) return render('status');
+            
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
+            if(!acc) return copy('ТОВАР ЗАКОНЧИЛСЯ');
 
-        // Запуск
-        loadProducts();
-        updateUI();
+            const text = `🔥 НОВЫЙ ЗАКАЗ 🔥\nТовар: ${activeItem.n}\nДанные: ${acc.data}\nЦена: ${activeItem.p} ₽\nЮзер: ${u.email}`;
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent(text)}`);
+            
+            copy('ДАННЫЕ ОТПРАВЛЕНЫ В БОТА!');
+            closeM();
+        }
+
+        function openPay(n, p) { 
+            activeItem = {n, p}; 
+            document.getElementById('p-name').innerText = n;
+            document.getElementById('p-total').innerText = p + ' ₽';
+            document.getElementById('m-pay').classList.remove('hidden'); 
+        }
+        function closeM() { document.getElementById('m-pay').classList.add('hidden'); }
+        function copy(t) { 
+            const toast = document.getElementById('toast');
+            toast.innerText = t; toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
+            navigator.clipboard.writeText(t);
+        }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+        function changeL() { state.lang = state.lang === 'ru' ? 'en' : 'ru'; save(); render('status'); }
+        function save() { localStorage.setItem('BOSS_V32', JSON.stringify(state)); }
+
+        render('shop');
     </script>
 </body>
 </html>
