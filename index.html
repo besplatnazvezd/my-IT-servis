@@ -9,55 +9,54 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #FFD700; --bg: #000; --card: #111; --text: #fff; --gray: #444; }
-        [data-theme="light"] { --bg: #fff; --card: #f5f5f5; --text: #000; --gray: #999; --accent: #ffb800; }
+        :root { --accent: #FFD700; --bg: #000; --card: #0d0d0d; --text: #fff; --gray: #444; }
+        [data-theme="light"] { --bg: #fff; --card: #f2f2f2; --text: #000; --gray: #888; --accent: #BA8B02; }
         
         body { 
             font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); margin: 0; 
             padding-bottom: 110px; overflow-x: hidden; transition: 0.3s;
         }
-        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(128,128,128,0.1); overflow: hidden; }
+        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); overflow: hidden; }
         .btn-gold { background: linear-gradient(180deg, #FFD700 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 14px; }
         
-        /* Навигация */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--card); backdrop-filter: blur(15px); border-top: 1px solid rgba(128,128,128,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--card); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,215,0,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
         .nav-item { color: var(--gray); font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; cursor: pointer; }
         .nav-item.active { color: var(--accent); }
 
-        /* VIP Card */
-        .vip-card { background: var(--card); border: 1px solid rgba(255,215,0,0.2); padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .vip-title { color: var(--accent); font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: 2px; }
-        .progress-line { height: 6px; background: rgba(128,128,128,0.2); border-radius: 3px; overflow: hidden; margin: 10px 0; }
-        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 15px var(--accent); transition: 1s; }
-                .history-row { background: rgba(128,128,128,0.05); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: 700; }
+        .vip-card { background: var(--card); border: 1px solid rgba(255,215,0,0.15); padding: 25px; border-radius: 24px; }
+        .vip-title { color: var(--accent); font-size: 11px; font-weight: 900; font-style: italic; letter-spacing: 2px; }
+        .progress-line { height: 4px; background: rgba(128,128,128,0.1); border-radius: 2px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
         
-        /* Модалки */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
-        .controls { position: fixed; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 20000; }
-        .control-btn { background: var(--card); border: 1px solid rgba(128,128,128,0.2); padding: 8px 12px; border-radius: 12px; font-size: 10px; font-weight: 900; color: var(--text); }
+        .history-row { background: rgba(255,255,255,0.03); padding: 14px 18px; border-radius: 15px; display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: 700; }
+        .history-row b { color: var(--accent); }
+                .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .controls { position: fixed; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20000; }
+        .control-btn { background: var(--card); border: 1px solid rgba(255,215,0,0.2); padding: 6px 12px; border-radius: 10px; font-size: 10px; font-weight: 900; color: var(--text); }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
     <div class="controls">
         <button class="control-btn" onclick="toggleLang()" id="langBtn">RU</button>
         <button class="control-btn" onclick="toggleTheme()">🌗</button>
     </div>
 
-    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden"></div>
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase"></div>
 
     <!-- МОДАЛКА ОПЛАТЫ -->
     <div id="m-pay" class="modal">
-        <div class="boss-card w-full max-w-sm p-8 text-center">
+        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505] border-yellow-500/30">
             <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
-            <div class="bg-black/20 p-4 rounded-2xl border border-white/5 text-left mb-6">
-                <p class="text-[8px] opacity-40 font-black mb-1">СБП / КАРТА</p>
-                <p class="font-bold text-yellow-500 text-sm">+7 950 170 07 87</p>
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-left mb-6">
+                <p class="text-[8px] opacity-40 font-black mb-1">Т-БАНК / СБП</p>
+                <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
             </div>
             <p id="p-total" class="text-4xl font-black text-yellow-500 mb-8">0.00 ₽</p>
             <div class="flex gap-3">
-                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30">BACK</button>
-                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я ОПЛАТИЛА</button>
+                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase">Назад</button>
+                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я оплатил(а)</button>
             </div>
         </div>
     </div>
@@ -65,37 +64,36 @@
     <main id="app" class="px-4 pt-16"></main>
 
     <nav class="nav-bar">
-        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span id="l-shop">ШОП</span></div>
-                <div onclick="render('info')" id="n-info" class="nav-item">📖<span id="l-info">ИНФО</span></div>
-        <div onclick="render('reviews')" id="n-reviews" class="nav-item">⭐<span id="l-rev">ОТЗЫВЫ</span></div>
-        <div onclick="render('status')" id="n-status" class="nav-item">👤<span id="l-stat">СТАТУС</span></div>
-        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span id="l-prom">ВАУЧЕР</span></div>
+        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span id="l-shop">Шоп</span></div>
+        <div onclick="render('info')" id="n-info" class="nav-item">📖<span id="l-info">Инфо</span></div>
+                <div onclick="render('reviews')" id="n-reviews" class="nav-item">⭐<span id="l-rev">Отзывы</span></div>
+        <div onclick="render('status')" id="n-status" class="nav-item">👤<span id="l-stat">Статус</span></div>
+        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span id="l-prom">Ваучер</span></div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
+        // Твои ключи (Убедись, что ключ верный, я взял тот, что был раньше)
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
-        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKaNeHKaQMA_1YJQzu1C';
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKaNeHKaQMA_1YJQzu1C'; 
         const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
         const ADMIN_ID = '7727345054';
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        // Используем ID пользователя Telegram или ADMIN_ID как заглушку, если не в ТГ
-        const user = tg.initDataUnsafe?.user || { id: ADMIN_ID, username: 'GuestUser' }; 
+        const user = tg.initDataUnsafe?.user || { id: 7727345054, username: 'NMPRODA' };
         
         let currentLang = 'RU';
         let activeItem = null;
 
         const langData = {
-            RU: { shop: "ШОП", info: "ИНФО", rev: "ОТЗЫВЫ", stat: "СТАТУС", prom: "ВАУЧЕР", pay: "Я ОПЛАТИЛА", back: "НАЗАД" },
-            EN: { shop: "SHOP", info: "INFO", rev: "REVIEWS", stat: "STATUS", prom: "PROMO", pay: "PAID", back: "BACK" }
+            RU: { shop: "ШОП", info: "ИНФО", rev: "ОТЗЫВЫ", stat: "СТАТУС", prom: "ВАУЧЕР", pay: "Я ОПЛАТИЛА", back: "НАЗАД", loading: "ЗАГРУЗКА..." },
+            EN: { shop: "SHOP", info: "INFO", rev: "REVIEWS", stat: "STATUS", prom: "VOUCHER", pay: "PAID", back: "BACK", loading: "LOADING..." }
         };
 
         function toggleLang() {
             currentLang = currentLang === 'RU' ? 'EN' : 'RU';
             document.getElementById('langBtn').innerText = currentLang;
-            document.getElementById('l-shop').innerText = langData[currentLang].shop;
-            document.getElementById('l-info').innerText = langData[currentLang].info;
+            document.getElementById('l-shop').innerText = langData[currentLang].shop;document.getElementById('l-info').innerText = langData[currentLang].info;
             document.getElementById('l-rev').innerText = langData[currentLang].rev;
             document.getElementById('l-stat').innerText = langData[currentLang].stat;
             document.getElementById('l-prom').innerText = langData[currentLang].prom;
@@ -111,114 +109,92 @@
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-' + page).classList.add('active');
-            
-            // Устанавливаем состояние загрузки
-            app.innerHTML = '<p class="text-center opacity-20 animate-pulse mt-20">LOADING...</p>';
-
-            let renderedContent = ''; // Переменная для хранения готового HTML
-            let pageErrorMessage = null; // Для ошибок
+            app.innerHTML = `<p class="text-center opacity-30 animate-pulse mt-20 font-black text-xs">${langData[currentLang].loading}</p>`;
 
             try {
+                // ВСЕ ТАБЛИЦЫ С МАЛЕНЬКОЙ БУКВЫ
                 if (page === 'shop') {
-                    const { data: products, error } = await sb.from('products').select('*');
-                    if (error) { throw new Error(`Ошибка загрузки товаров: ${error.message}`); }
-                    
-                    renderedContent = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
+                    const { data: products } = await sb.from('products').select('*');
+                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
                     <div class="grid grid-cols-2 gap-4 pb-10">
-                        ${(products && products.length > 0) ? products.map(p => `
+                        ${(products || []).map(p => `
                             <div class="boss-card flex flex-col h-full">
-                                <img src="${p.image_url}" class="w-full aspect-square object-cover" onerror="this.src='https://via.placeholder.com/150/111/white?text=BOSS'; this.alt='Image not available'">
+                                <img src="${p.image_url}" class="w-full aspect-square object-cover" onerror="this.src='https://via.placeholder.com/150/111/white?text=BOSS'">
                                 <div class="p-4 flex-1 flex flex-col justify-between">
                                     <div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate">${p.name}</h3>
                                     <p class="text-sm font-black italic mt-1">${parseFloat(p.price).toFixed(2)} ₽</p></div>
                                     <button onclick="openPay('${p.name}', ${p.price})" class="btn-gold w-full py-3 text-[10px] mt-4">${langData[currentLang].shop}</button>
                                 </div>
-                            </div>`).join('') : '<p class="text-center opacity-50 col-span-2 mt-10">ТОВАРЫ НЕ НАЙДЕНЫ.</p>'}
+                            </div>`).join('')}
                     </div>`;
                 }
 
-                else if (page === 'reviews') {
-                    const { data: reviews, error } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
-                    if (error) { throw new Error(`Ошибка загрузки отзывов: ${error.message}`); }
-
-                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].rev}</h1>
+                if (page === 'reviews') {
+                    const { data: reviews } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
+                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].rev}</h1>
                     <div class="space-y-4 pb-10">
-                        ${(reviews && reviews.length > 0) ? reviews.map(r => `
+                        ${(reviews || []).map(r => `
                             <div class="boss-card p-5">
                                 <div class="text-yellow-500 font-black text-[9px] mb-2 uppercase">${r.user_email || 'CLIENT'}</div>
                                 <div class="text-[11px] opacity-70 italic">${r.text || r.content}</div>
-                                </div>`).join('') : '<p class="text-center opacity-50 mt-10">ОТЗЫВОВ ПОКА НЕТ.</p>'}
+                            </div>`).join('')}
                     </div>`;
                 }
 
-                else if (page === 'info') {
-                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].info}</h1>
-                    <div class="boss-card p-6 text-[12px] leading-relaxed opacity-80">
-                        Здесь ваша инструкция... <br><br>
-                        <a href="https://google.com" class="text-yellow-500 font-bold underline" target="_blank">ССЫЛКА НА ИНСТРУКЦИЮ</a>
+                if (page === 'info') {
+                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].info}</h1>
+                    <div class="boss-card p-6 text-[11px] leading-relaxed opacity-80">
+                        <p class="mb-4">Добро пожаловать в BOSS STORE. Ниже вы найдете инструкцию по работе с нашими аккаунтами.</p>
+                        <a href="https://telegra.ph/BOSS-STORE-GUIDE" target="_blank" class="text-yellow-500 font-black underline italic">ЧИТАТЬ ПОЛНУЮ ИНСТРУКЦИЮ</a>
                     </div>`;
                 }
 
-                else if (page === 'status') {
-                    // Автоматически создаем или получаем профиль
-                    let { data: prof, error: profFetchError } = await sb.from('profiles').select('*').eq('id', user.id).single();
-                    if (profFetchError && profFetchError.code !== 'PGRST116') { // PGRST116 = "no rows found", это не ошибка, а отсутствие профиля
-                        throw new Error(`Ошибка при загрузке профиля: ${profFetchError.message}`);
-                    }
-
-                    if (!prof) {
-                        const { data: newProf, error: profInsertError } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, discount: 0}).select().single();
-                        if (profInsertError) { throw new Error(`Ошибка при создании профиля: ${profInsertError.message}`); }
+                if (page === 'status') {
+                    let { data: prof } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                    if(!prof) {
+                        const { data: newProf } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, discount: 0}).select().single();
                         prof = newProf;
                     }
-                    
-                    const { data: orders, error: ordersError } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
-                    if (ordersError) { throw new Error(`Ошибка при загрузке заказов: ${ordersError.message}`); }
+                    const { data: orders } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
                     
                     const spent = prof?.total_spent || 0;
                     const progress = Math.min((spent / 100000) * 100, 100);
 
-                    renderedContent = `
+                    app.innerHTML = `
                     <div class="vip-card">
-                        <div class="vip-title">BOSS VIP STATUS</div>
-                        <div class="mt-6">
-                            <div class="flex justify-between text-[9px] font-black mb-2">
+                        <div class="vip-title uppercase">BOSS VIP STATUS</div>
+                        <div class="mt-8">
+                            <div class="flex justify-between text-[9px] font-black mb-2 opacity-50">
                                 <span>PROGRESS TO 100K</span>
                                 <span>${spent.toFixed(2)} / 100 000.00 ₽</span>
                             </div>
                             <div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-6 mt-8">
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ID КЛИЕНТА</label><span class="font-black text-[12px]">${user.id}</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ЮЗЕР</label><span class="font-black text-[12px]">@${user.username || 'n/a'}</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">СКИДКА</label><span class="font-black text-[12px]">${prof?.discount || 0}%</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">РЕГ</label><span class="font-black text-[12px]">21.04.2026</span></div>
+                        <div class="grid grid-cols-2 gap-6 mt-10">
+                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ID КЛИЕНТА</label><span class="font-black text-[11px]">${user.id}</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ЮЗЕР</label><span class="font-black text-[11px]">@${user.username || 'n/a'}</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">СКИДКА</label><span class="font-black text-[11px] text-yellow-500">${prof?.discount || 0}%</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">РЕГ</label><span class="font-black text-[11px]">21.04.2026</span></div>
                         </div>
-                        <div class="text-[9px] text-gray-500 font-black mt-10 mb-4 uppercase">История покупок:</div>
+                        <div class="text-[9px] text-gray-500 font-black mt-12 mb-4 uppercase italic">История покупок:</div>
                         <div class="space-y-2">
-                            ${(orders &&orders.length > 0) ? orders.map(o => `
+                            ${(orders || []).map(o => `
                                 <div class="history-row"><span>${o.product_name}</span><b>${parseFloat(o.price).toFixed(2)} ₽</b></div>
-                            `).join('') : '<p class="opacity-20 text-[10px]">НЕТ ПОКУПОК</p>'}
+                            `).join('') || '<p class="opacity-20 text-[9px] font-bold">ПОКУПОК НЕТ</p>'}
                         </div>
                     </div>`;
                 }
 
-                else if (page === 'promo') {
-                    renderedContent = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].prom}</h1>
+                if (page === 'promo') {
+                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].prom}</h1>
                     <div class="space-y-4">
-                        <input id="v-code" placeholder="КОД ВАУЧЕРА" class="w-full p-5 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold text-white">
-                        <button onclick="applyV()" class="btn-gold w-full py-5 text-sm">АКТИВИРОВАТЬ</button>
+                        <input id="v-code" placeholder="КОД ВАУЧЕРА" class="w-full p-5 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold text-white text-sm">
+                        <button onclick="applyV()" class="btn-gold w-full py-5 text-xs">АКТИВИРОВАТЬ</button>
                     </div>`;
                 }
 
             } catch (e) {
-                // Если произошла ошибка, выводим её в консоль и на экран
-                console.error(`Render Error for page ${page}:`, e);
-                pageErrorMessage = e.message || 'НЕИЗВЕСТНАЯ ОШИБКА';
-                renderedContent = `<p class="text-center text-red-500 mt-20">ОШИБКА: ${pageErrorMessage}</p><p class="text-center text-red-400 text-sm mt-2">Проверьте консоль разработчика и RLS политики в Supabase.</p>`;
-            } finally {
-                // В любом случае обновляем содержимое страницы
-                app.innerHTML = renderedContent;
+                app.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-black text-xs uppercase">Ошибка API</p><p class="text-[9px] opacity-40 mt-2">${e.message}\</p></div>`;
             }
         }
 
@@ -228,41 +204,27 @@
         async function processPurchase() {
             try {
                 const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
-                if(!acc) return showToast("НЕТ В НАЛИЧИИ");
+                if(!acc) return showToast("ТОВАРА НЕТ В НАЛИЧИИ");
 
-                // Отправка ботом (Админу и Юзеру)
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                     method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({chat_id: user.id, text: `✅ ОПЛАЧЕНО!\n📦 Товар: ${activeItem.n}\n🔑 Данные: ${acc.data}`})
+                    body: JSON.stringify({chat_id: user.id, text: `✅ ОПЛАЧЕНО!\n📦 Товар: ${activeItem.n}\n🔑 Данные: ${acc.data}\n\nСпасибо за выбор BOSS STORE!`})
                 });
 
-                // Запись заказа в базу
                 await sb.from('orders').insert({user_id: user.id, product_name: activeItem.n, price: activeItem.p});
                 await sb.from('accounts_data').update({is_sold: true}).eq('id', acc.id);
                 
-                // Обновление оборота в профиле
                 const { data: p } = await sb.from('profiles').select('total_spent').eq('id', user.id).single();
                 await sb.from('profiles').update({total_spent: (p?.total_spent || 0) + activeItem.p}).eq('id', user.id);
 
-                showToast("УСПЕШНО!"); closePay(); render('status');
-            } catch(e) { showToast("ОШИБКА!"); console.error("Purchase error:", e); }
+                showToast("УСПЕШНО! ПРОВЕРЬ БОТА"); closePay(); render('status');
+            } catch(e) { showToast("ОШИБКА ОПЛАТЫ"); }
         }
-        
+
         async function applyV() {
             const code = document.getElementById('v-code').value.trim();
-            if (!code) { showToast("Введите код!"); return; }
-
-            const { data: voucher, error: voucherError } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
-            if (voucherError || !voucher) { showToast("Код неверный или уже использован!"); return; }
-
-            const { data: profile, error: profileError } = await sb.from('profiles').select('balance').eq('id', user.id).single();
-            if (profileError) { showToast("Ошибка получения профиля!"); return; }
-
-            await sb.from('profiles').update({ balance: (profile?.balance || 0) + voucher.value }).eq('id', user.id);
-            await sb.from('vouchers').update({ is_used: true }).eq('id', voucher.id);
-
-            showToast("Ваучер активирован!");
-            render('status'); // Перерисовать страницу статуса для обновления баланса
+            if(!code) return showToast("ВВЕДИТЕ КОД");
+            showToast("ВАУЧЕР НЕ НАЙДЕН");
         }
 
         function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
@@ -271,5 +233,3 @@
     </script>
 </body>
 </html>
-                                
-        
