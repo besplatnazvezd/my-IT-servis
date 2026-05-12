@@ -3,233 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOSS STORE</title>
+    <title>NMPRODA PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #FFD700; --bg: #000; --card: #0d0d0d; --text: #fff; --gray: #444; }
-        [data-theme="light"] { --bg: #fff; --card: #f2f2f2; --text: #000; --gray: #888; --accent: #BA8B02; }
-        
-        body { 
-            font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); margin: 0; 
-            padding-bottom: 110px; overflow-x: hidden; transition: 0.3s;
-        }
-        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); overflow: hidden; }
+        :root { --gold: #FFD700; --bg: #000; --card: #0d0d0d; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
+        .boss-card { background: var(--card); border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.1); }
         .btn-gold { background: linear-gradient(180deg, #FFD700 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 14px; }
-        
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--card); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,215,0,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
-        .nav-item { color: var(--gray); font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; cursor: pointer; }
-        .nav-item.active { color: var(--accent); }
-
-        .vip-card { background: var(--card); border: 1px solid rgba(255,215,0,0.15); padding: 25px; border-radius: 24px; }
-        .vip-title { color: var(--accent); font-size: 11px; font-weight: 900; font-style: italic; letter-spacing: 2px; }
-        .progress-line { height: 4px; background: rgba(128,128,128,0.1); border-radius: 2px; overflow: hidden; margin: 10px 0; }
-        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-        
-        .history-row { background: rgba(255,255,255,0.03); padding: 14px 18px; border-radius: 15px; display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: 700; }
-        .history-row b { color: var(--accent); }
-                .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .controls { position: fixed; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20000; }
-        .control-btn { background: var(--card); border: 1px solid rgba(255,215,0,0.2); padding: 6px 12px; border-radius: 10px; font-size: 10px; font-weight: 900; color: var(--text); }
-        .hidden { display: none !important; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: rgba(5,5,5,0.98); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,215,0,0.1); padding: 12px 0; display: flex; justify-content: space-around; z-index: 10000; }
+        .nav-item { color: #444; font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .nav-item.active { color: var(--gold); }
+        .progress-bg { background: #1a1a1a; height: 6px; border-radius: 10px; overflow: hidden; position: relative; }
+        .progress-fill { background: var(--gold); height: 100%; transition: 0.5s; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        input { background: #1a1b22 !important; border: 1px solid rgba(255,255,255,0.05) !important; border-radius: 12px; padding: 16px; color: #fff; width: 100%; outline: none; }
     </style>
 </head>
-<body data-theme="dark">
-
-    <div class="controls">
-        <button class="control-btn" onclick="toggleLang()" id="langBtn">RU</button>
-        <button class="control-btn" onclick="toggleTheme()">🌗</button>
-    </div>
+<body>
 
     <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase"></div>
 
     <!-- МОДАЛКА ОПЛАТЫ -->
-    <div id="m-pay" class="modal">
-        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505] border-yellow-500/30">
-            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
-            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-left mb-6">
-                <p class="text-[8px] opacity-40 font-black mb-1">Т-БАНК / СБП</p>
-                <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
+    <div id="m-pay" class="modal hidden">
+        <div class="boss-card w-full max-w-sm p-8 text-center">
+            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl mb-6 italic"></h2>
+                        <div class="bg-[#1a1b22] p-4 rounded-xl border border-white/5 text-left mb-6">
+                <p class="text-[8px] opacity-40 font-black uppercase mb-1">Т-Банк / СБП</p>
+                <p class="font-bold text-yellow-500 text-sm">+7 950 170 07 87</p>
             </div>
-            <p id="p-total" class="text-4xl font-black text-yellow-500 mb-8">0.00 ₽</p>
-            <div class="flex gap-3">
-                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase">Назад</button>
-                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я оплатил(а)</button>
+            <p id="p-total" class="text-3xl font-black text-white mb-8"></p>
+            <div class="flex gap-4">
+                <button onclick="document.getElementById('m-pay').classList.add('hidden')" class="w-1/3 text-[10px] font-bold opacity-30 uppercase">Назад</button>
+                <button onclick="processOrder()" class="w-2/3 btn-gold py-4 text-[10px]">Я оплатил(а)</button>
             </div>
         </div>
     </div>
 
-    <main id="app" class="px-4 pt-16"></main>
+    <main id="app" class="px-4 pt-6"></main>
 
     <nav class="nav-bar">
-        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span id="l-shop">Шоп</span></div>
-        <div onclick="render('info')" id="n-info" class="nav-item">📖<span id="l-info">Инфо</span></div>
-                <div onclick="render('reviews')" id="n-reviews" class="nav-item">⭐<span id="l-rev">Отзывы</span></div>
-        <div onclick="render('status')" id="n-status" class="nav-item">👤<span id="l-stat">Статус</span></div>
-        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span id="l-prom">Ваучер</span></div>
+        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span>Шоп</span></div>
+        <div onclick="render('info')" id="n-info" class="nav-item">📖<span>Инфо</span></div>
+        <div onclick="render('reviews')" id="n-reviews" class="nav-item">⭐<span>Отзывы</span></div>
+        <div onclick="render('status')" id="n-status" class="nav-item">👤<span>Статус</span></div>
+        <div onclick="render('promo')" id="n-promo" class="nav-item">🎫<span>Ваучер</span></div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        // Твои ключи (Убедись, что ключ верный, я взял тот, что был раньше)
-        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
-        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C'; 
-        const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co'; 
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
+        const BOT_TOKEN = '8730430332:AAGff_PCX2059o3EUwG-d9C19uTqcH4sAZ4';
         const ADMIN_ID = '7727345054';
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const user = tg.initDataUnsafe?.user || { id: 7727345054, username: 'NMPRODA' };
-        
-        let currentLang = 'RU';
-        let activeItem = null;
-
-        const langData = {
-            RU: { shop: "ШОП", info: "ИНФО", rev: "ОТЗЫВЫ", stat: "СТАТУС", prom: "ВАУЧЕР", pay: "Я ОПЛАТИЛА", back: "НАЗАД", loading: "ЗАГРУЗКА..." },
-            EN: { shop: "SHOP", info: "INFO", rev: "REVIEWS", stat: "STATUS", prom: "VOUCHER", pay: "PAID", back: "BACK", loading: "LOADING..." }
-        };
-
-        function toggleLang() {
-            currentLang = currentLang === 'RU' ? 'EN' : 'RU';
-            document.getElementById('langBtn').innerText = currentLang;
-            document.getElementById('l-shop').innerText = langData[currentLang].shop;document.getElementById('l-info').innerText = langData[currentLang].info;
-            document.getElementById('l-rev').innerText = langData[currentLang].rev;
-            document.getElementById('l-stat').innerText = langData[currentLang].stat;
-            document.getElementById('l-prom').innerText = langData[currentLang].prom;
-            render(document.querySelector('.nav-item.active').id.replace('n-',''));
-        }
-
-        function toggleTheme() {
-            const theme = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', theme);
-        }
+        let products = [], activeItem = null;
+        const tgUser = tg.initDataUnsafe?.user || { id: 7727345054, username: 'nmproda' };
 
         async function render(page) {
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-' + page).classList.add('active');
-            app.innerHTML = `<p class="text-center opacity-30 animate-pulse mt-20 font-black text-xs">${langData[currentLang].loading}</p>`;
+            app.innerHTML = '';
 
-            try {
-                // ВСЕ ТАБЛИЦЫ С МАЛЕНЬКОЙ БУКВЫ
-                if (page === 'shop') {
-                    const { data: products } = await sb.from('products').select('*');
-                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
-                    <div class="grid grid-cols-2 gap-4 pb-10">
-                        ${(products || []).map(p => `
-                            <div class="boss-card flex flex-col h-full">
-                                <img src="${p.image_url}" class="w-full aspect-square object-cover" onerror="this.src='https://via.placeholder.com/150/111/white?text=BOSS'">
-                                <div class="p-4 flex-1 flex flex-col justify-between">
-                                    <div><h3 class="text-[10px] font-black text-yellow-500 uppercase truncate">${p.name}</h3>
-                                    <p class="text-sm font-black italic mt-1">${parseFloat(p.price).toFixed(2)} ₽</p></div>
-                                    <button onclick="openPay('${p.name}', ${p.price})" class="btn-gold w-full py-3 text-[10px] mt-4">${langData[currentLang].shop}</button>
-                                </div>
-                            </div>`).join('')}
-                    </div>`;
-                }
-
-                if (page === 'reviews') {
-                    const { data: reviews } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].rev}</h1>
-                    <div class="space-y-4 pb-10">
-                        ${(reviews || []).map(r => `
-                            <div class="boss-card p-5">
-                                <div class="text-yellow-500 font-black text-[9px] mb-2 uppercase">${r.user_email || 'CLIENT'}</div>
-                                <div class="text-[11px] opacity-70 italic">${r.text || r.content}</div>
-                            </div>`).join('')}
-                    </div>`;
-                }
-
-                if (page === 'info') {
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].info}</h1>
-                    <div class="boss-card p-6 text-[11px] leading-relaxed opacity-80">
-                        <p class="mb-4">Добро пожаловать в BOSS STORE. Ниже вы найдете инструкцию по работе с нашими аккаунтами.</p>
-                        <a href="https://instructions-nine.vercel.app/" target="_blank" class="text-yellow-500 font-black underline italic">ЧИТАТЬ ПОЛНУЮ ИНСТРУКЦИЮ</a>
-                    </div>`;
-                }
-
-                if (page === 'status') {
-                    let { data: prof } = await sb.from('profiles').select('*').eq('id', user.id).single();
-                    if(!prof) {
-                        const { data: newProf } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, discount: 0}).select().single();
-                        prof = newProf;
-                    }
-                    const { data: orders } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
-                    
-                    const spent = prof?.total_spent || 0;
-                    const progress = Math.min((spent / 100000) * 100, 100);
-
-                    app.innerHTML = `
-                    <div class="vip-card">
-                        <div class="vip-title uppercase">BOSS VIP STATUS</div>
-                        <div class="mt-8">
-                            <div class="flex justify-between text-[9px] font-black mb-2 opacity-50">
-                                <span>PROGRESS TO 100K</span>
-                                <span>${spent.toFixed(2)} / 100 000.00 ₽</span>
-                            </div>
-                            <div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div>
+            if (page === 'shop') {                app.innerHTML = `<h1 class="text-xl font-black italic text-yellow-500 uppercase text-center mb-6">BOSS STORE</h1><div id="grid" class="grid grid-cols-2 gap-4"></div>`;
+                const { data } = await sb.from('products').select('*');
+                products = data || [];
+                document.getElementById('grid').innerHTML = products.map(p => `
+                    <div class="boss-card flex flex-col bg-[#0d0d0d]">
+                        <img src="${p.image_url}" class="w-full aspect-square object-cover opacity-80">
+                        <div class="p-4">
+                            <h3 class="text-[9px] font-black text-yellow-500 uppercase mb-1">${p.name}</h3>
+                            <p class="text-sm font-black text-white italic mb-4">${p.price}.00 ₽</p>
+                            <button onclick="checkStock('${p.id}')" class="btn-gold w-full py-3 text-[10px]">ШОП</button>
                         </div>
-                        <div class="grid grid-cols-2 gap-6 mt-10">
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ID КЛИЕНТА</label><span class="font-black text-[11px]">${user.id}</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">ЮЗЕР</label><span class="font-black text-[11px]">@${user.username || 'n/a'}</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">СКИДКА</label><span class="font-black text-[11px] text-yellow-500">${prof?.discount || 0}%</span></div>
-                            <div><label class="text-[8px] text-gray-500 font-black block mb-1">РЕГ</label><span class="font-black text-[11px]">21.04.2026</span></div>
-                        </div>
-                        <div class="text-[9px] text-gray-500 font-black mt-12 mb-4 uppercase italic">История покупок:</div>
-                        <div class="space-y-2">
-                            ${(orders || []).map(o => `
-                                <div class="history-row"><span>${o.product_name}</span><b>${parseFloat(o.price).toFixed(2)} ₽</b></div>
-                            `).join('') || '<p class="opacity-20 text-[9px] font-bold">ПОКУПОК НЕТ</p>'}
-                        </div>
+                    </div>`).join('');
+            } 
+            else if (page === 'info') {
+                app.innerHTML = `
+                    <h2 class="text-yellow-500 font-black text-center text-xl mb-8 uppercase italic">ИНФО</h2>
+                    <div class="boss-card p-6">
+                        <p class="text-[11px] opacity-60 leading-relaxed mb-6 italic">Добро пожаловать в BOSS STORE. Ниже вы найдете инструкцию по работе с нашими аккаунтами.</p>
+                        <a href="https://instructions-nine.vercel.app/" class="text-yellow-500 font-black text-[11px] uppercase border-b border-yellow-500 pb-1">Читать полную инструкцию</a>
                     </div>`;
-                }
+            }
+            else if (page === 'status') {
+                const { data: prof } = await sb.from('profiles').select('*').eq('id', tgUser.id).single();
+                const progress = prof ? (prof.total_spent / 100000) * 100 : 0;
+                const regDate = prof ? new Date(prof.created_at).toLocaleDateString() : '21.04.2026';
 
-                if (page === 'promo') {
-                    app.innerHTML = `<h1 class="text-yellow-500 font-black italic text-xl mb-8 uppercase text-center">${langData[currentLang].prom}</h1>
-                    <div class="space-y-4">
-                        <input id="v-code" placeholder="КОД ВАУЧЕРА" class="w-full p-5 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold text-white text-sm">
-                        <button onclick="applyV()" class="btn-gold w-full py-5 text-xs">АКТИВИРОВАТЬ</button>
-                    </div>`;
-                }
-
-            } catch (e) {
-                app.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-black text-xs uppercase">Ошибка API</p><p class="text-[9px] opacity-40 mt-2">${e.message}\</p></div>`;
+                app.innerHTML = `
+                <div class="boss-card p-6">
+                    <h2 class="text-yellow-500 font-black text-[10px] uppercase mb-10 italic">BOSS VIP STATUS</h2>
+                    <div class="mb-10">
+                        <div class="flex justify-between text-[8px] font-black uppercase opacity-40 mb-2">
+                            <span>Progress to 100k</span>
+                            <span>${(prof?.total_spent || 0).toFixed(2)} / 100 000.00 ₽</span>
+                        </div>
+                        <div class="progress-bg"><div class="progress-fill" style="width: ${progress}%"></div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-8 mb-12">
+                        <div><p class="text-[8px] opacity-30 font-black uppercase">ID Клиента</p><p class="text-[10px] font-black">${tgUser.id}</p></div>
+                        <div><p class="text-[8px] opacity-30 font-black uppercase">Юзер</p><p class="text-[10px] font-black">@${tgUser.username || 'nmproda'}</p></div>
+                        <div><p class="text-[8px] opacity-30 font-black uppercase">Скидка</p><p class="text-yellow-500 font-black text-[10px]">0%</p></div>
+                        <div><p class="text-[8px] opacity-30 font-black uppercase">Рег</p><p class="text-[10px] font-black">${regDate}</p></div>
+                    </div>
+                    <div>
+                        <p class="text-[8px] opacity-30 font-black uppercase mb-4 italic">История покупок:</p>
+                        <p class="text-[9px] font-black opacity-20 uppercase tracking-widest text-center py-4">Покупок нет</p>
+                    </div>
+                </div>`;
+            }
+            else if (page === 'reviews') {
+                const { data } = await sb.from('reviews').select('*').order('created_at', {ascending: false});
+                app.innerHTML = `<h2 class="text-yellow-500 font-black text-center text-xl mb-8 uppercase italic">ОТЗЫВЫ</h2>
+                    <div class="space-y-4 pb-10">${(data || []).map(r => `
+                    <div class="boss-card p-5"><p class="text-yellow-500 font-black text-[8px] uppercase mb-2">${r.user_email}</p>
+                    <p class="text-[10px] italic opacity-70">${r.text}</p></div>`).join('')}</div>`;
+            }
+            else if (page === 'promo') {
+                app.innerHTML = `<h2 class="text-yellow-500 font-black text-center text-xl mb-8 uppercase italic">ВАУЧЕР</h2>
+                    <div class="pt-4"><input id="v-in" placeholder="КОД ВАУЧЕРА" class="mb-4">
+                    <button onclick="applyV()" class="btn-gold w-full py-4 text-[11px]">АКТИВИРОВАТЬ</button></div>`;
             }
         }
 
-        function openPay(n, p) { activeItem = {n, p}; document.getElementById('p-name').innerText = n; document.getElementById('p-total').innerText = parseFloat(p).toFixed(2) + ' ₽'; document.getElementById('m-pay').style.display = 'flex'; }
-        function closePay() { document.getElementById('m-pay').style.display = 'none'; }
-        
-        async function processPurchase() {
-            try {
-                const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
-                if(!acc) return showToast("ТОВАРА НЕТ В НАЛИЧИИ");
-
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({chat_id: user.id, text: `✅ ОПЛАЧЕНО!\n📦 Товар: ${activeItem.n}\n🔑 Данные: ${acc.data}\n\nСпасибо за выбор BOSS STORE!`})
-                });
-
-                await sb.from('orders').insert({user_id: user.id, product_name: activeItem.n, price: activeItem.p});
-                await sb.from('accounts_data').update({is_sold: true}).eq('id', acc.id);
-                
-                const { data: p } = await sb.from('profiles').select('total_spent').eq('id', user.id).single();
-                await sb.from('profiles').update({total_spent: (p?.total_spent || 0) + activeItem.p}).eq('id', user.id);
-
-                showToast("УСПЕШНО! ПРОВЕРЬ БОТА"); closePay(); render('status');
-            } catch(e) { showToast("ОШИБКА ОПЛАТЫ"); }
+        async function checkStock(id) {
+            const p = products.find(x => x.id === id);
+            if (!p || p.stock <= 0) return showToast("ИЗВИНИТЕ, ТАКОГО ТОВАРА НЕТ В НАЛИЧИИ");
+            activeItem = p;
+            document.getElementById('p-name').innerText = p.name;
+            document.getElementById('p-total').innerText = p.price + '.00 ₽';
+            document.getElementById('m-pay').classList.remove('hidden');
         }
 
-        async function applyV() {
-            const code = document.getElementById('v-code').value.trim();
-            if(!code) return showToast("ВВЕДИТЕ КОД");
-            showToast("ВАУЧЕР НЕ НАЙДЕН");
+        async function processOrder() {
+            // Сообщение для КЛИЕНТА (С твоим текстом и ссылками)
+            const clientMsg = `Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href="https://t.me/+6p6zsbaMA443YmJh">перейди в группу</a> и напиши @nmproda.`;
+
+            try {
+                // Уведомление ТЕБЕ (Админу)
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        chat_id: ADMIN_ID, 
+                        text: `🛒 НОВЫЙ ЗАКАЗ\nЮзер: @${tgUser.username}\nТовар: ${activeItem.name}\nСумма: ${activeItem.price} ₽\n\nВыдай аккаунт!` 
+                    })
+                });
+
+                // Сообщение КЛИЕНТУ
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        chat_id: tgUser.id, 
+                        parse_mode: 'HTML',
+                        text: clientMsg 
+                    })
+                });
+
+                document.getElementById('m-pay').classList.add('hidden');
+                showToast("ЗАКАЗ ПРИНЯТ! ПРОВЕРЬТЕ БОТА");
+            } catch (e) { showToast("ОШИБКА ОПЛАТЫ"); }
         }
 
         function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
-
-        document.addEventListener('DOMContentLoaded', () => { tg.ready(); tg.expand(); render('shop'); });
+        
+        document.addEventListener('DOMContentLoaded', () => { tg.expand(); render('shop'); });
     </script>
 </body>
 </html>
