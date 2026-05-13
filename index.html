@@ -77,7 +77,7 @@
         let activeDiscount = 0; 
         let activeItem = null;
 
-        // ЛОГИКА ПЕРСОНАЛЬНОГО СТАТУСА (localStorage)
+        // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ ---
         function getStats() {
             let s = localStorage.getItem('stats_' + user.id);
             if(!s) {
@@ -85,17 +85,25 @@
                 const year = d.getFullYear();
                 const month = (d.getMonth() + 1).toString().padStart(2, '0');
                 const day = d.getDate().toString().padStart(2, '0');
-                s = { spent: 0, history: [], reg: `${day}.${month}.${year}`, used: [] };
+                s = { spent: 0, history: [], reg: `${day}.${month}.${year}`, usedPromo: [] }; // 'usedPromo' вместо 'used'
                 localStorage.setItem('stats_' + user.id, JSON.stringify(s));
             } else s = JSON.parse(s);
             return s;
         }
 
+        // --- КОНФИГУРАЦИЯ ПРОМОКОДОВ (ЛОКАЛЬНО) ---
+        const PROMO_CODES = {
+            VLASTELIN2: { discount: 2, stock: 100 }, // Пример: название кода, скидка в %, начальное количество
+            VLASTELIN4: { discount: 4, stock: 100 },
+        };
+
+        // --- ЯЗЫКОВЫЕ ДАННЫЕ ---
         const lang = {
             RU: { shop:"ШОП", luck:"УДАЧА", stat:"СТАТУС", prom:"ПРОМО", cont:"СВЯЗЬ", adm:"АДМИН", no:"ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", ok:"Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
             EN: { shop:"SHOP", luck:"LUCK", stat:"STATUS", prom:"PROMO", cont:"CONTACT", adm:"ADMIN", no:"SORRY, OUT OF STOCK", ok:"Thanks! Your account is ready ⭐️. Message @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh'>join group</a>." }
         };
 
+        // --- ОТРИСОВКА НАВИГАЦИИ ---
         function renderNav() {
             const nav = document.getElementById('bottom-nav');
             let html = `
@@ -105,20 +113,20 @@
                 <div onclick="render('promo')" class="nav-item" id="n-promo">🔑<span>${lang[currentLang].prom}</span></div>
                 <div onclick="render('contact')" class="nav-item" id="n-contact">💬<span>${lang[currentLang].cont}</span></div>
             `;
-            // Отображать кнопку "АДМИН" только для ADMIN_ID
             if(user.id.toString() === ADMIN_ID.toString()) {
                 html += `<div onclick="render('admin')" class="nav-item" id="n-admin">⚙️<span>${lang[currentLang].adm}</span></div>`;
             }
             nav.innerHTML = html;
         }
 
+        // --- ГЛАВНАЯ ФУНКЦИЯ РЕНДЕРИНГА СТРАНИЦ ---
         async function render(page) {
             const app = document.getElementById('app');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('n-'+page)?.classList.add('active'); // Активировать текущую вкладку
             app.innerHTML = `<div class="mt-20 text-center opacity-20 font-black animate-pulse">LOADING...</div>`;
 
-            if(page === 'shop') {
+            if(page === 'shop') { // --- СТРАНИЦА МАГАЗИНА ---
                 const { data: prods, error } = await sb.from('products').select('*').order('price');
                 if (error) {
                     console.error("Error fetching products:", error);
@@ -129,8 +137,7 @@
                 <div class="grid grid-cols-2 gap-4 pb-10">
                     ${(prods || []).map(p => {
                         let pr = p.price * (1 - activeDiscount/100);
-                        // Используем оператор нулевого слияния (??) для отображения 0, если stock null/undefined
-                        const displayStock = p.stock ?? 0; 
+                        const displayStock = p.stock ?? 0; // Отобразить 0, если stock null/undefined
                         return `<div class="boss-card flex flex-col h-full">
                             <img src="${p.image_url}" class="w-full aspect-square object-cover">
                             <div class="p-4 flex-1 flex flex-col justify-between">
@@ -149,7 +156,7 @@
                 </div>`;
             }
 
-            if(page === 'status') {
+            if(page === 'status') { // --- СТРАНИЦА СТАТУСА ---
                 const s = getStats();
                 const prog = Math.min((s.spent / 100000) * 100, 100);
                 app.innerHTML = `
@@ -170,26 +177,27 @@
                 </div>`;
             }
 
-            if(page === 'promo') { // Теперь промокоды подгружаются из Supabase
-                const { data: pms, error } = await sb.from('promos').select('*');
-                if (error) {
-                    console.error("Error fetching promos:", error);
-                    app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ОШИБКА ЗАГРУЗКИ ПРОМОКОДОВ</div>`;
-                    return;
-                }
+            if(page === 'promo') { // --- СТРАНИЦА ПРОМОКОДОВ (localStorage) ---
+                const s = getStats();
                 app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Активация промо</h1>
                 <input id="v-code" placeholder="ВВЕДИТЕ КОД" class="mb-4">
                 <button onclick="applyV()" class="btn-gold w-full py-5 text-xs mb-10">Активировать</button>
                 <div class="space-y-3">
-                    ${(pms || []).map(p => `
-                    <div onclick="copyCode('${p.code}')" class="boss-card p-5 flex justify-between items-center cursor-pointer active:scale-95 transition">
-                        <div><b class="text-yellow-500 text-sm">${p.code}</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка ${p.discount}%</p></div>
-                        <span class="text-[10px] font-black">${p.stock} ОСТАЛОСЬ</span>
-                    </div>`).join('')}
+                    ${Object.entries(PROMO_CODES).map(([code, data]) => {
+                        const usedCount = s.usedPromo.filter(uc => uc.code === code).length;
+                        const remainingStock = data.stock - usedCount;
+                        const isCodeActive = remainingStock > 0 && !s.usedPromo.some(uc => uc.code === code);
+
+                        return `
+                        <div onclick="${isCodeActive ? `copyCode('${code}')` : ''}" class="boss-card p-5 flex justify-between items-center ${isCodeActive ? 'cursor-pointer active:scale-95 transition' : 'opacity-50'}">
+                            <div><b class="text-yellow-500 text-sm">${code}</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка ${data.discount}%</p></div>
+                            <span class="text-[10px] font-black">${remainingStock} ОСТАЛОСЬ</span>
+                        </div>`;
+                    }).join('')}
                 </div>`;
             }
 
-            if(page === 'luck') { // Переименовано из 'info' для соответствия навигации
+            if(page === 'luck') { // --- СТРАНИЦА УДАЧИ/ИНФО ---
                 app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">ИНФО</h1>
                 <div class="boss-card p-7 text-[11px] opacity-70 leading-relaxed">
                     Добро пожаловать в <b>NMPRODA PREMIUM</b>. Ниже вы найдете инструкцию по работе с нашими аккаунтами.<br><br>
@@ -197,7 +205,7 @@
                 </div>`;
             }
 
-            if(page === 'contact') {
+            if(page === 'contact') { // --- СТРАНИЦА КОНТАКТОВ ---
                 app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Связь</h1>
                 <div class="space-y-4">
                     <div onclick="window.open('https://t.me/+6p6zsbaMA443YmJh')" class="boss-card p-6 flex items-center gap-5 cursor-pointer">
@@ -209,8 +217,8 @@
                 </div>`;
             }
 
-            if(page === 'admin') { // Админ-панель
-                if (user.id.toString() !== ADMIN_ID.toString()) { // Проверка ID пользователя
+            if(page === 'admin') { // --- АДМИН-ПАНЕЛЬ ---
+                if (user.id.toString() !== ADMIN_ID.toString()) { 
                     app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ДОСТУП ЗАПРЕЩЕН</div>`;
                     return;
                 }
@@ -232,7 +240,7 @@
             }
         }
 
-        // Функция для копирования текста (проверено, работает в Telegram WebApp)
+        // --- КОПИРОВАНИЕ ПРОМОКОДА ---
         function copyCode(c) {
             const el = document.createElement('textarea'); 
             el.value = c; 
@@ -243,10 +251,9 @@
             showToast("СКОПИРОВАНО: " + c);
         }
 
-        // Обновление стока товара в Supabase
+        // --- ОБНОВЛЕНИЕ СТОКА ТОВАРА (АДМИНКА) ---
         async function updateStock(id) {
             const val = document.getElementById('st-'+id).value;
-            // Проверка на число
             if (isNaN(parseInt(val))) {
                 showToast("Введите число!");
                 return;
@@ -262,29 +269,45 @@
             render('shop'); // Обновить магазин, чтобы изменения сразу были видны
         }
 
-        async function applyV() {
-            const code = document.getElementById('v-code').value.trim().toUpperCase();
+        // --- АКТИВАЦИЯ ПРОМОКОДА ---
+        function applyV() {
+            const codeInput = document.getElementById('v-code').value.trim().toUpperCase();
             const s = getStats();
-            if(s.used.includes(code)) return showToast("УЖЕ ИСПОЛЬЗОВАНО");
             
-            const { data: pm, error } = await sb.from('promos').select('*').eq('code', code).single();
-            if (error || !pm || pm.stock <= 0) {
-                showToast("НЕВЕРНЫЙ КОД ИЛИ ЗАКОНЧИЛСЯ");
+            // Проверка, есть ли такой промокод вообще
+            if (!PROMO_CODES[codeInput]) {
+                showToast("НЕВЕРНЫЙ КОД");
                 return;
             }
 
-            activeDiscount = pm.discount;
-            s.used.push(code); localStorage.setItem('stats_'+user.id, JSON.stringify(s));
-            
-            // Уменьшаем количество промокодов в базе данных
-            await sb.from('promos').update({ stock: pm.stock - 1 }).eq('id', pm.id);
+            const promoData = PROMO_CODES[codeInput];
+            const usedCount = s.usedPromo.filter(uc => uc.code === codeInput).length;
+            const remainingStock = promoData.stock - usedCount;
+
+            // Проверка, использовал ли пользователь этот промокод
+            if (s.usedPromo.some(uc => uc.code === codeInput)) {
+                showToast("УЖЕ ИСПОЛЬЗОВАНО");
+                return;
+            }
+
+            // Проверка, есть ли еще промокоды в наличии
+            if (remainingStock <= 0) {
+                showToast("ПРОМОКОД ЗАКОНЧИЛСЯ");
+                return;
+            }
+
+            // Активация промокода
+            activeDiscount = promoData.discount;
+            s.usedPromo.push({ code: codeInput, discount: promoData.discount }); // Сохраняем код и скидку
+            localStorage.setItem('stats_' + user.id, JSON.stringify(s));
             
             document.body.classList.add('promo-active');
             showToast("АКТИВИРОВАНО!"); 
-            render('shop'); // Обновляем магазин, чтобы цены изменились
-            render('promo'); // Обновляем промо-страницу, чтобы уменьшился счетчик
+            render('shop'); // Обновить магазин, чтобы цены изменились
+            render('promo'); // Обновить промо-страницу, чтобы показать актуальное количество
         }
 
+        // --- МОДАЛКА ПОКУПКИ ---
         function openPay(n, p) { 
             activeItem = {n, p}; 
             document.getElementById('p-name').innerText = n; 
@@ -292,22 +315,22 @@
             document.getElementById('m-pay').style.display = 'flex'; 
         }
 
+        // --- ОБРАБОТКА ПОКУПКИ ---
         async function processPurchase() {
             const { data: prod } = await sb.from('products').select('*').eq('name', activeItem.n).single();
-            if(!prod || (prod.stock ?? 0) <= 0) return showToast(lang[currentLang].no); // Проверка stock с ?? 0
+            if(!prod || (prod.stock ?? 0) <= 0) return showToast(lang[currentLang].no); 
 
             const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
             if(!acc) return showToast(lang[currentLang].no);
 
-            // Отправка админу
             const adminMsg = `🔥 ЗАКАЗ 🔥\n💎 Товар: ${activeItem.n}\n👛 Цена: ${activeItem.p.toFixed(2)} ₽\n👤 Юзер: @${user.username || 'n/a'} (${user.id})`;
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:ADMIN_ID, text:adminMsg})});
 
-            // Отправка юзеру
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:user.id, text:`✅ ТВОЙ АККАУНТ:\n\n${acc.data}`})});
 
             await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-            await sb.from('products').update({ stock: prod.stock - 1 }).eq('id', prod.id);
+            await sb.from('products').update({ stock: prod.stock - 1 })\ 
+.eq('id', prod.id);
 
             const s = getStats();
             s.spent += activeItem.p;
@@ -326,7 +349,7 @@
             const s = document.getElementById('toast'); 
             s.innerText = t; 
             s.classList.remove('hidden'); 
-            s.classList.add('animate-fade-in-up'); // Можно добавить анимацию
+            s.classList.add('animate-fade-in-up'); 
             setTimeout(()=> {
                 s.classList.remove('animate-fade-in-up');
                 s.classList.add('hidden');
@@ -341,5 +364,4 @@
     </script>
 </body>
 </html>
-        
         
