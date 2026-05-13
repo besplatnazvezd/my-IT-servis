@@ -51,39 +51,59 @@
         const ADMIN_ID = '7727345054'; 
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const user = tg.initDataUnsafe?.user || { id: '7727345054', username: 'admin' }; 
+        // Используем ID пользователя из Telegram, если доступен, иначе ID администратора
+        const user = tg.initDataUnsafe?.user || { id: ADMIN_ID, username: 'admin' }; 
         
         let activeDiscount = 0; 
         let activeItem = null;
 
-        const PROMO_CODES = { "VLASTELIN2": 2, "VLASTELIN4": 4 };
+        // Промокоды хранятся локально
+        const PROMO_CODES = { 
+            "VLASTELIN2": { discount: 2, stock: 100 }, // Скидка 2%, 100 использований
+            "VAEL777": { discount: 4, stock: 100 }  // Скидка 4%, 100 использований
+        };
 
+        // Функция для получения статистики пользователя из localStorage
         function getStats() {
             let s = localStorage.getItem('stats_' + user.id);
             if(!s) {
-                s = { spent: 0, history: [], reg: '13.05.2024', usedPromo: [] };
+                // Если статистики нет, создаем новую
+                s = { spent: 0, history: [], reg: new Date().toLocaleDateString('ru-RU'), usedPromo: [] }; 
                 localStorage.setItem('stats_' + user.id, JSON.stringify(s));
             } else s = JSON.parse(s);
             return s;
         }
 
+        // Основная функция отрисовки страниц
         async function render(page) {
             const app = document.getElementById('app');
-            renderNav(page);
+            renderNav(page); // Отрисовываем навигацию
             app.innerHTML = `<div class="mt-20 text-center opacity-20 font-black">ЗАГРУЗКА...</div>`;
 
-            if(page === 'shop') {
-                const { data: prods } = await sb.from('products').select('*').order('price');
+            if(page === 'shop') { // --- СТРАНИЦА МАГАЗИНА ---
+                console.log("Rendering shop...");
+                const { data: prods, error } = await sb.from('products').select('*').order('price');
+                if (error) {
+                    console.error("Error fetching products:", error);
+                    alert("ОШИБКА SUPABASE при загрузке товаров: " + error.message + "\n**ПРИЧИНА:** Убедись, что RLS Policies (SELECT) для таблицы 'products' настроены правильно, и что ты авторизован!");
+                    app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ОШИБКА ЗАГРУЗКИ ТОВАРОВ</div>`;
+                    return;
+                }
+                console.log("Products fetched:", prods);
                 app.innerHTML = `<h1 class="text-center text-yellow-500 font-black text-xl mb-6">NMPRODA PREMIUM</h1>
                 <div class="grid grid-cols-2 gap-4 pb-10">
-                    ${(prods || []).map(p => {                        let pr = p.price * (1 - activeDiscount/100);
+                    ${(prods || []).map(p => {
+                        // Применяем скидку, если она активна
+                        let pr = p.price * (1 - activeDiscount/100);
+                        // Отображаем stock, или 0 если null/undefined
+                        const displayStock = p.stock ?? 0; 
                         return `<div class="boss-card flex flex-col h-full">
                             <img src="${p.image_url}" class="w-full aspect-square object-cover">
                             <div class="p-4 flex-1 flex flex-col justify-between">
-                                <div><h3 class="text-[9px] font-black uppercase">${p.name}</h3>
+                                <div><h3 class="text-[9px] font-black uppercase truncate">${p.name}</h3>
                                 <div class="flex justify-between items-end mt-3">
-                                    <p class="text-sm font-black italic">${pr.toFixed(2)} ₽</p>
-                                    <span class="text-[8px] font-black opacity-30">${p.stock || 0} PCS</span>
+                                    <p class="text-sm font-black italic ${activeDiscount > 0 ? 'text-purple-400' : ''}">${pr.toFixed(2)} ₽</p>
+                                    <span class="text-[8px] font-black opacity-30">${displayStock} PCS</span>
                                 </div></div>
                                 <button onclick="openPay('${p.name}', ${pr})" class="btn-gold w-full py-3 text-[10px] mt-4">ШОП</button>
                             </div>
@@ -92,104 +112,236 @@
                 </div>`;
             }
 
-            if(page === 'promo') {
-                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black text-lg mb-8 uppercase">ПРОМОКОД</h1>
+            if(page === 'promo') { // --- СТРАНИЦА ПРОМОКОДОВ ---
+                console.log("Rendering promo page...");
+                const s = getStats(); // Получаем статистику пользователя
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black text-lg mb-8 uppercase">Активация промо</h1>
                 <input id="v-code" placeholder="ВВЕДИТЕ КОД" class="w-full mb-4">
-                <button onclick="applyV()" class="btn-gold w-full py-5 text-xs">АКТИВИРОВАТЬ</button>`;
+                <button onclick="applyV()" class="btn-gold w-full py-5 text-xs mb-10">АКТИВИРОВАТЬ</button>
+                <div class="space-y-3">
+                    ${Object.entries(PROMO_CODES).map(([code, data]) => {
+                        // Проверяем, использовал ли пользователь этот код
+                        const usedEntry = s.usedPromo.find(uc => uc.code === code);
+                        // Сколько доступных использований осталось для этого пользователя
+                        const remainingUses = usedEntry ? 0 : data.stock; 
+                        const isAlreadyUsed = !!usedEntry; // true, если использован
+                        const isOutOfStock = remainingUses <= 0; // true, если закончился
+
+                        return `
+                        <div onclick="${!isAlreadyUsed && !isOutOfStock ? `copyCode('${code}')` : ''}" class="boss-card p-5 flex justify-between items-center ${!isAlreadyUsed && !isOutOfStock ? 'cursor-pointer active:scale-95 transition' : 'opacity-50'}">
+                            <div><b class="text-yellow-500 text-sm">${code}</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка ${data.discount}%</p></div>
+                            <span class="text-[10px] font-black">${isAlreadyUsed ? '0' : remainingUses} ОСТАЛОСЬ</span>
+                        </div>`;
+                    }).join('')}
+                </div>`;
             }
 
-            if(page === 'admin') {
-                const { data: prds } = await sb.from('products').select('*');
-                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black text-lg mb-8 uppercase">АДМИН ПАНЕЛЬ</h1>
+            if(page === 'admin') { // --- АДМИН-ПАНЕЛЬ ---
+                console.log("Rendering admin panel...");
+                // Проверяем, является ли текущий пользователь администратором
+                if (user.id.toString() !== ADMIN_ID.toString()) {
+                    console.log("Access denied for user:", user.id);
+                    app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ДОСТУП ЗАПРЕЩЕН</div>`;
+                    return;
+                }
+
+                // Загружаем список товаров для админки
+                const { data: prds, error } = await sb.from('products').select('*');
+                if (error) {
+                    console.error("Error fetching products for admin:", error);
+                    alert("ОШИБКА SUPABASE при загрузке товаров в админку: " + error.message + "\n**ПРИЧИНА:** Убедись, что RLS Policies (SELECT) для таблицы 'products' настроены правильно!");
+                    app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ОШИБКА ЗАГРУЗКИ ТОВАРОВ В АДМИНКЕ</div>`;
+                    return;
+                }
+                console.log("Products for admin:", prds);
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black text-lg mb-8 uppercase">Управление стоком</h1>
                 <div class="space-y-3">
                     ${prds.map(p => `
                     <div class="boss-card p-4 flex justify-between items-center">
-                        <span class="text-[10px] font-black w-1/2">${p.name}</span>
-                        <input type="number" id="st-${p.id}" value="${p.stock || 0}" class="w-16 p-2 rounded text-sm">
+                        <span class="text-[10px] font-black w-1/2 truncate">${p.name}</span>
+                        <input type="number" id="st-${p.id}" value="${p.stock ?? 0}" class="w-16 p-2 rounded text-sm">
                         <button onclick="updateStock(${p.id})" class="btn-gold px-3 py-2 text-[10px]">SAVE</button>
                     </div>`).join('')}
                 </div>`;
             }
         }
 
+        // Функция отрисовки нижней навигации
         function renderNav(active) {
             const nav = document.getElementById('bottom-nav');
+            // Основные пункты навигации
             const items = [
                 {id:'shop', n:'ШОП', i:'🛒'}, {id:'status', n:'СТАТУС', i:'👤'}, 
-                {id:'promo', n:'ПРОМО', i:'🔑'}, {id:'admin', n:'АДМИН', i:'⚙️'}
+                {id:'promo', n:'ПРОМО', i:'🔑'}
             ];
-            nav.innerHTML = items.map(it => {
-                if(it.id === 'admin' && user.id.toString() !== ADMIN_ID) return '';
-                return `<div onclick="render('${it.id}')" class="nav-item ${active===it.id?'active':''}"><span>${it.i}</span><span>${it.n}</span></div>`
-            }).join('');
+            // Добавляем админ-пункт, только если пользователь - админ
+            if(user.id.toString() === ADMIN_ID.toString()) {
+                 items.push({id:'admin', n:'АДМИН', i:'⚙️'});
+            }
+            nav.innerHTML = items.map(it => `<div onclick="render('${it.id}')" class="nav-item ${active===it.id?'active':''}"><span>${it.i}</span><span>${it.n}</span></div>`).join('');
         }
 
+        // Функция обновления стока товара (вызывается из админки)
         async function updateStock(id) {
-            const val = document.getElementById('st-'+id).value;
+            const inputElement = document.getElementById('st-'+id);
+            const val = inputElement.value;
+            console.log(`Updating stock for product ID ${id} to ${val}`);
+
+            // Проверка, что введено число
+            if (isNaN(parseInt(val))) {
+                showToast("Введите число!");
+                return;
+            }
+
             const { error } = await sb.from('products').update({ stock: parseInt(val) }).eq('id', id);
             if (error) {
-                alert("ОШИБКА SUPABASE: " + error.message + "\nПроверь RLS Policies!");
+                console.error("Error updating stock:", error);
+                alert("ОШИБКА SUPABASE при обновлении стока: " + error.message + "\n**ПРИЧИНА:** Скорее всего, RLS Policies (UPDATE) для таблицы 'products' не настроены!");
             } else {
                 showToast("СОХРАНЕНО!");
-                render('shop');
+                render('shop'); // Обновляем магазин, чтобы изменения сразу отобразились
+                render('admin'); // Обновляем админку, чтобы поля ввода показали актуальные данные
             }
         }
 
-        function applyV() {
-            const code = document.getElementById('v-code').value.toUpperCase();
-            if (PROMO_CODES[code]) {
-                activeDiscount = PROMO_CODES[code];
-                document.body.classList.add('promo-active');
-                showToast("СКИДКА " + activeDiscount + "% АКТИВИРОВАНА!");
-                render('shop');
-            } else { showToast("КОД НЕВЕРЕН"); }
+        // Функция копирования промокода
+        function copyCode(c) {
+            const el = document.createElement('textarea'); 
+            el.value = c; 
+            document.body.appendChild(el); 
+            el.select();
+            document.execCommand('copy'); 
+            document.body.removeChild(el);
+            showToast("СКОПИРОВАНО: " + c);
         }
 
-        function openPay(n, p) { activeItem = {n, p}; document.getElementById('p-name').innerText = n; document.getElementById('p-total').innerText = p.toFixed(2) + ' ₽'; document.getElementById('m-pay').style.display = 'flex'; }
+        // Функция активации промокода
+        function applyV() {
+            const codeInput = document.getElementById('v-code').value.trim().toUpperCase();
+            const s = getStats(); // Получаем текущую статистику пользователя
+            
+            console.log("Applying promo code:", codeInput);
+
+            // Проверяем, существует ли такой промокод
+            if (!PROMO_CODES[codeInput]) {
+                showToast("НЕВЕРНЫЙ КОД");
+                return;
+            }
+
+            const promoData = PROMO_CODES[codeInput];
+            // Ищем, использовал ли пользователь этот промокод ранее
+            const usedEntry = s.usedPromo.find(uc => uc.code === codeInput);
+
+            // Если код уже был использован
+            if (usedEntry) {
+                showToast("ПРОМОКОД УЖЕ ИСПОЛЬЗОВАН");
+                return;
+            }
+            
+            // Если промокод новый для пользователя
+            activeDiscount = promoData.discount; // Устанавливаем активную скидку
+            s.usedPromo.push({ code: codeInput, discount: promoData.discount }); // Добавляем код в список использованных
+            localStorage.setItem('stats_' + user.id, JSON.stringify(s)); // Сохраняем измененную статистику
+            
+            document.body.classList.add('promo-active'); // Добавляем класс для фиолетового свечения
+            showToast("СКИДКА " + activeDiscount + "% АКТИВИРОВАНА!"); 
+            render('shop'); // Перерисовываем магазин, чтобы применить скидку
+            render('promo'); // Перерисовываем страницу промо, чтобы обновить информацию
+        }
+
+        // Открытие модалки оплаты
+        function openPay(n, p) { 
+            activeItem = {n, p}; // Сохраняем название и цену товара
+            document.getElementById('p-name').innerText = n; 
+            document.getElementById('p-total').innerText = p.toFixed(2) + ' ₽'; 
+            document.getElementById('m-pay').style.display = 'flex'; // Показываем модалку
+        }
+        // Закрытие модалки оплаты
         function closePay() { document.getElementById('m-pay').style.display = 'none'; }
 
+        // Обработка покупки после нажатия "Я оплатил(а)"
         async function processPurchase() {
-            // 1. Проверяем stock в таблице products
+            console.log("Processing purchase for:", activeItem.n);
+            
+            // 1. Проверяем наличие stock в таблице products
             const { data: prod, error: e1 } = await sb.from('products').select('stock').eq('name', activeItem.n).single();
-            if(e1 || !prod || prod.stock <= 0) {
-                alert("ОШИБКА: В таблице products stock = 0 или товар не найден по имени '" + activeItem.n + "'");
+            if(e1) {
+                console.error("Supabase Error (SELECT products stock):", e1);
+                alert("ОШИБКА SUPABASE при проверке stock: " + e1.message + "\n**ПРИЧИНА:** Убедись, что RLS Policies (SELECT) для таблицы 'products' настроены, и название товара '" + activeItem.n + "' совпадает ТОЧНО!");
+                return;
+            }
+            if(!prod) {
+                alert("ОШИБКА: Товар '" + activeItem.n + "' не найден в таблице products. Проверь ТОЧНОЕ совпадение имени (включая флаги и пробелы)!");
+                return;
+            }
+            // Проверяем, есть ли товар в наличии (stock > 0)
+            if((prod.stock ?? 0) <= 0) { 
+                alert("ОШИБКА: Для товара '" + activeItem.n + "' в таблице products stock = 0. Увеличь stock в админке или Supabase.");
                 return;
             }
 
-            // 2. Ищем данные в accounts_data
+            // 2. Ищем свободные данные аккаунта в таблице accounts_data
             const { data: acc, error: e2 } = await sb.from('accounts_data')
                 .select('*')
-                .eq('product_name', activeItem.n)
-                .eq('is_sold', false)
-                .limit(1).single();
+                .eq('product_name', activeItem.n) // Ищем по названию товара
+                .eq('is_sold', false) // Ищем только непроданные
+                .limit(1).single(); // Берем только одну запись
 
-            if(e2 || !acc) {
-                alert("ОШИБКА: В таблице accounts_data нет свободных данных для '" + activeItem.n + "'. Проверь product_name и is_sold!");
+            if(e2) {
+                console.error("Supabase Error (SELECT accounts_data):", e2);
+                alert("ОШИБКА SUPABASE при поиске аккаунта: " + e2.message + "\n**ПРИЧИНА:** Убедись, что RLS Policies (SELECT) для таблицы 'accounts_data' настроены, и название товара '" + activeItem.n + "' совпадает ТОЧНО!");
+                return;
+            }
+            if(!acc) {
+                alert("ОШИБКА: В таблице accounts_data нет свободных данных для '" + activeItem.n + "'. \n**ПРИЧИНА:** Проверь ТОЧНОЕ совпадение 'product_name' с именем товара, и что 'is_sold' = false!");
                 return;
             }
 
-            // Если всё ок - выдаем
-            alert("УСПЕХ! Товар найден. Сейчас отправлю в бот.");
-            
-            await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-            await sb.from('products').update({ stock: prod.stock - 1 }).eq('id', prod.id);
+            // Если все проверки пройдены - выдаем аккаунт
+            showToast("Товар найден. Отправляю аккаунт в Telegram.");
+            console.log("Account found:", acc);
+            // 3. Помечаем аккаунт как проданный
+            const { error: updateAccError } = await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
+            if (updateAccError) {
+                console.error("Supabase Error (UPDATE accounts_data):", updateAccError);
+                alert("ОШИБКА SUPABASE при обновлении статуса аккаунта: " + updateAccError.message + "\n**ПРИЧИНА:** Скорее всего, RLS Policies (UPDATE) для 'accounts_data' не настроены!");
+                return;
+            }
 
+            // 4. Уменьшаем stock товара
+            const { error: updateProdError } = await sb.from('products').update({ stock: prod.stock - 1 }).eq('id', prod.id);
+            if (updateProdError) {
+                console.error("Supabase Error (UPDATE products stock):", updateProdError);
+                alert("ОШИБКА SUPABASE при уменьшении stock: " + updateProdError.message + "\n**ПРИЧИНА:** Скорее всего, RLS Policies (UPDATE) для 'products' не настроены!");
+                return;
+            }
+
+            // 5. Отправляем данные аккаунта пользователю через Telegram Bot
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({chat_id:user.id, text:`✅ ТВОЙ АККАУНТ ${activeItem.n}:\n\n${acc.data}`})
             });
 
-            closePay();
-            render('shop');
+            closePay(); // Закрываем модалку оплаты
+            render('shop'); // Обновляем магазин, чтобы показать новый stock
         }
 
+        // Функция для показа коротких уведомлений (тостов)
         function showToast(t) { 
-            const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); 
-            setTimeout(()=> s.classList.add('hidden'), 3000); 
+            const s = document.getElementById('toast'); 
+            s.innerText = t; 
+            s.classList.remove('hidden'); 
+            // Анимация скрытия через 3 секунды
+            setTimeout(() => s.classList.add('hidden'), 3000); 
         }
 
-        document.addEventListener('DOMContentLoaded', () => { render('shop'); });
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => { 
+            tg.ready(); // Говорим Telegram, что мини-приложение готово
+            tg.expand(); // Расширяем мини-приложение на весь экран
+            render('shop'); // Отрисовываем главную страницу (магазин)
+        });
     </script>
 </body>
 </html>
