@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NMPRODA PREMIUM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #FFD700; --bg: #000; --card: #0d0d0d; --text: #fff; --gray: #555; --border: rgba(255, 215, 0, 0.1); }
+        [data-theme="light"] { --bg: #ffffff; --card: #f0f7ff; --text: #004a7c; --gray: #8ba8c7; --accent: #0088ff; }
+        
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 100px; min-height: 100vh; }
+        
+        /* ФИОЛЕТОВАЯ РАМКА ПРИ ПРОМОКОДЕ */
+        body.promo-active { border: 4px solid #a855f7; box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.3); }
+
+        .boss-card { background: var(--card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
+        .btn-gold { background: linear-gradient(180deg, var(--accent) 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 12px; }
+        
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .nav-item { color: var(--gray); font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .nav-item.active { color: var(--accent); }
+
+        .progress-line { height: 4px; background: rgba(128,128,128,0.1); border-radius: 2px; margin: 12px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: 1s; }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
+              input { background: #151515; border: 1px solid var(--border); padding: 16px; border-radius: 14px; color: #fff; width: 100%; outline: none; text-align: center; font-weight: 700; }
+
+        .history-item { background: rgba(255,255,255,0.03); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 8px; }
+        .history-item b { color: var(--accent); }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div class="fixed top-4 right-4 flex gap-2 z-[20000]">
+        <button onclick="toggleLang()" id="langBtn" class="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase">RU</button>
+        <button onclick="toggleTheme()" class="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px]">🌗</button>
+    </div>
+
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase shadow-lg shadow-purple-500/50"></div>
+
+    <!-- МОДАЛКА ОПЛАТЫ -->
+    <div id="m-pay" class="modal">
+        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505]">
+            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
+            <div class="bg-white/5 p-5 rounded-2xl text-left mb-6 border border-white/5">
+                <p class="text-[8px] opacity-40 font-black mb-1 uppercase tracking-widest">Т-Банк / СБП</p>
+                <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
+            </div>
+            <p id="p-total" class="text-4xl font-black text-white mb-8">0.00 ₽</p>
+            <div class="flex gap-3">
+                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase" id="l-back">Назад</button>
+                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]" id="l-pay-btn">Я оплатил(а)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА УСПЕХА -->
+    <div id="m-success" class="modal">
+        <div class="boss-card w-full max-w-sm p-8 text-center">
+                      <h2 class="text-yellow-500 font-black uppercase text-xl italic mb-4 italic">УСПЕШНО</h2>
+            <p id="success-text" class="text-[11px] leading-relaxed opacity-80 mb-8"></p>
+            <button onclick="closeSuccess()" class="btn-gold w-full py-4 text-[10px]">OK</button>
+        </div>
+    </div>
+
+    <main id="app" class="px-4 pt-14"></main>
+
+    <nav class="nav-bar">
+        <div onclick="render('shop')" id="n-shop" class="nav-item active">🛒<span id="l-shop">Шоп</span></div>
+        <div onclick="render('info')" id="n-info" class="nav-item">⚡<span id="l-info">Удача</span></div>
+        <div onclick="render('status')" id="n-status" class="nav-item">👤<span id="l-stat">Статус</span></div>
+        <div onclick="render('promo')" id="n-promo" class="nav-item">🔑<span id="l-prom">Промо</span></div>
+        <div onclick="render('contact')" id="n-contact" class="nav-item">💬<span id="l-cont">Связь</span></div>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
+        const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
+        const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
+        const ADMIN_ID = '7727345054';
+
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+        const user = tg.initDataUnsafe?.user || { id: 7727345054, username: 'NMPRODA' };
+        
+        let currentLang = 'RU';
+        let activeDiscount = 0; 
+        let usedCodes = JSON.parse(localStorage.getItem('usedCodes') || '[]');
+        let activeItem = null;
+
+        // ИНИЦИАЛИЗАЦИЯ ЛОКАЛЬНОГО СТАТУСА
+        if (!localStorage.getItem('userStats')) {
+            localStorage.setItem('userStats', JSON.stringify({ totalSpent: 0, history: [], regDate: '21.04.2026' }));
+        }
+
+        const langData = {
+            RU: { shop: "ШОП", info: "УДАЧА", stat: "СТАТУС", prom: "ПРОМО", cont: "СВЯЗЬ", back: "Назад", pay: "Я оплатил(а)", outOfStock: "ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", success: "Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
+            EN: { shop: "SHOP", info: "LUCK", stat: "STATUS", prom: "PROMO", cont: "CONTACT", back: "BACK", pay: "I PAID", outOfStock: "SORRY, OUT OF STOCK", success: "Thanks for purchase! Account is waiting ⭐️. Message @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>join group</a> and message @nmproda." }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'RU' ? 'EN' : 'RU';
+            document.getElementById('langBtn').innerText = currentLang;
+            document.getElementById('l-shop').innerText = langData[currentLang].shop;
+            document.getElementById('l-info').innerText = langData[currentLang].info;
+            document.getElementById('l-stat').innerText = langData[currentLang].stat;
+            document.getElementById('l-prom').innerText = langData[currentLang].prom;
+            document.getElementById('l-cont').innerText = langData[currentLang].cont;
+            document.getElementById('l-back').innerText = langData[currentLang].back;
+            document.getElementById('l-pay-btn').innerText = langData[currentLang].pay;
+            render(document.querySelector('.nav-item.active').id.replace('n-',''));
+        }
+
+        function toggleTheme() {
+            document.body.setAttribute('data-theme', document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+        }
+
+        async function render(page) {
+            const app = document.getElementById('app');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('n-' + page).classList.add('active');
+
+            if (page === 'shop') {
+                app.innerHTML = `<div class="text-center mt-20 opacity-20 font-black animate-pulse">LOADING...</div>`;
+                const { data: prods } = await sb.from('products').select('*');
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">NMPRODA PREMIUM</h1>
+                <div class="grid grid-cols-2 gap-4 pb-10">
+                    ${(prods || []).map(p => {
+                        let finalPrice = p.price * (1 - activeDiscount/100);
+                        return `
+                        <div class="boss-card flex flex-col h-full border-white/5">
+                            <img src="${p.image_url}" class="w-full aspect-square object-cover">
+                            <div class="p-4 flex-1 flex flex-col justify-between">
+                                <div class="mb-3">
+                                    <h3 class="text-[9px] font-black text-white uppercase truncate">${p.name}</h3>
+                                    <p class="text-[8px] opacity-40 font-bold mt-1 truncate">${p.description || ''}</p>
+                                    <div class="flex justify-between items-end mt-3">
+                                        <p class="text-sm font-black italic ${activeDiscount > 0 ? 'text-purple-400' : ''}">${finalPrice.toFixed(2)} ₽</p>
+                                        <span class="text-[8px] font-black opacity-30">${p.stock || 0} PCS</span>
+                                    </div>
+                                </div>
+                                <button onclick="openPay('${p.name}', ${finalPrice})" class="btn-gold w-full py-3 text-[10px]">${langData[currentLang].shop}</button>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            }
+
+            if (page === 'status') {
+                const stats = JSON.parse(localStorage.getItem('userStats'));
+                const progress = Math.min((stats.totalSpent / 100000) * 100, 100);
+
+                app.innerHTML = `
+                <div class="boss-card p-6 border-yellow-500/10">
+                    <div class="text-yellow-500 font-black italic text-[11px] uppercase tracking-widest">BOSS VIP STATUS</div>
+                    <div class="mt-10">
+                        <div class="flex justify-between text-[9px] font-black mb-1 opacity-50 uppercase"><span>Progress to 100k</span><span>${stats.totalSpent.toFixed(2)} / 100 000.00 ₽</span></div>
+                        <div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-10 mt-12">
+                        <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">ID Клиента</label><span class="font-black text-[12px]">${user.id}</span></div>
+                        <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Юзер</label><span class="font-black text-[12px]">@${user.username || 'n/a'}</span></div>
+                        <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Скидка</label><span class="font-black text-[12px] text-yellow-500">4%</span></div>
+                        <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Рег</label><span class="font-black text-[12px]">${stats.regDate}</span></div>
+                    </div>
+                    <div class="mt-14 mb-4 text-[9px] font-black opacity-20 uppercase italic tracking-widest">История покупок:</div>
+                    <div class="space-y-2">
+                        ${stats.history.map(o => `<div class="history-item"><span>${o.name}</span><b>${o.price.toFixed(2)} ₽</b></div>`).reverse().join('') || '<p class="opacity-10 text-[10px] font-bold">НЕТ ПОКУПОК</p>'}
+                    </div>
+                </div>`;
+            }
+
+            if (page === 'promo') {
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Активация промо</h1>
+                <div class="space-y-6">
+                    <input id="v-code" placeholder="ВВЕДИТЕ КОД">
+                    <button onclick="applyV()" class="btn-gold w-full py-5 text-xs">Активировать</button>
+                    <div class="pt-6 space-y-3">
+                        <div onclick="copyCode('BOSS2')" class="boss-card p-5 flex justify-between items-center cursor-pointer active:opacity-50"><div><b class="text-yellow-500 text-sm">BOSS2</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка 2%</p></div><span class="text-[10px] font-black">100 ОСТАЛОСЬ</span></div>
+                        <div onclick="copyCode('BOSS4')" class="boss-card p-5 flex justify-between items-center cursor-pointer active:opacity-50"><div>
+                        <b class="text-yellow-500 text-sm">BOSS4</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка 4%</p></div><span class="text-[10px] font-black">100 ОСТАЛОСЬ</span></div>
+                    </div>
+                </div>`;
+            }
+
+            if (page === 'info') {
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">ИНФО</h1>
+                <div class="boss-card p-7 leading-relaxed text-[11px] opacity-70">
+                    Добро пожаловать в <b>NMPRODA PREMIUM</b>. Ниже вы найдете инструкцию по работе с нашими аккаунтами. <br><br>
+                    <a href="https://instructions-nine.vercel.app/" target="_blank" class="text-yellow-500 font-black underline italic uppercase text-[12px]">Читать полную инструкцию</a>
+                </div>`;
+            }
+
+            if (page === 'contact') {
+                app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Связь</h1>
+                <div class="space-y-4">
+                    <div onclick="window.open('https://t.me/+6p6zsbaMA443YmJh')" class="boss-card p-6 flex items-center gap-5 cursor-pointer">
+                        <span class="text-3xl">📢</span><div><b class="text-sm uppercase block font-black">NMPRODA КАНАЛ</b><p class="text-[9px] opacity-40">Новости и скидки</p></div>
+                    </div>
+                    <div onclick="window.open('https://t.me/nmproda')" class="boss-card p-6 flex items-center gap-5 cursor-pointer">
+                        <span class="text-3xl">🤵</span><div><b class="text-sm uppercase block font-black">МЕНЕДЖЕР</b><p class="text-[9px] opacity-40">@NMPRODA</p></div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        function copyCode(txt) {
+            const el = document.createElement('textarea');
+            el.value = txt; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            showToast("СКОПИРОВАНО: " + txt);
+        }
+
+        async function applyV() {
+            const code = document.getElementById('v-code').value.trim().toUpperCase();
+            if(usedCodes.includes(code)) return showToast("УЖЕ ИСПОЛЬЗОВАНО");
+            let val = code === 'BOSS2' ? 2 : (code === 'BOSS4' ? 4 : 0);
+            if(!val) return showToast("НЕВЕРНЫЙ КОД");
+            activeDiscount = val;
+            usedCodes.push(code); localStorage.setItem('usedCodes', JSON.stringify(usedCodes));
+            document.body.classList.add('promo-active');
+            showToast("АКТИВИРОВАНО!"); render('shop');
+        }
+
+        function openPay(n, p) { 
+            activeItem = {n, p}; 
+            document.getElementById('p-name').innerText = n; 
+            document.getElementById('p-total').innerText = p.toFixed(2) + ' ₽'; 
+            document.getElementById('m-pay').style.display = 'flex'; 
+        }
+
+        async function processPurchase() {
+            const { data: prod } = await sb.from('products').select('*').eq('name', activeItem.n).single();
+            if(!prod || prod.stock <= 0) return showToast(langData[currentLang].outOfStock);
+
+            // УВЕДОМЛЕНИЕ АДМИНУ
+            const adminMsg = `🔥 НОВЫЙ ЗАКАЗ 🔥\n💎 Товар-[${activeItem.n}] 💎\n📦 Количество-[1] 📦\n🔢 Остаток-[${prod.stock - 1}] 🔢\n👛 Цена-[${activeItem.p.toFixed(2)} ₽] 👛\n❤️ Мой айди-[${user.id}] ❤️\n⭐️ Мой юзернейм-[@${user.username || 'n/a'}] ⭐️`;
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({chat_id: ADMIN_ID, text: adminMsg})});
+
+            const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
+            
+            if(acc) {
+                // ОТПРАВКА ТОВАРА ЮЗЕРУ
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({chat_id: user.id, text: `✅ ВАШ ТОВАР:\n\n${acc.data}`})});
+                
+                await sb.from('accounts_data').update({is_sold: true}).eq('id', acc.id);
+                await sb.from('products').update({stock: prod.stock - 1}).eq('id', prod.id);
+
+                // ОБНОВЛЕНИЕ ЛОКАЛЬНОГО СТАТУСА
+                const stats = JSON.parse(localStorage.getItem('userStats'));
+                stats.totalSpent += activeItem.p;
+                stats.history.push({ name: activeItem.n, price: activeItem.p });
+                localStorage.setItem('userStats', JSON.stringify(stats));
+
+                activeDiscount = 0; document.body.classList.remove('promo-active');
+                document.getElementById('success-text').innerHTML = langData[currentLang].success;
+                document.getElementById('m-pay').style.display = 'none';
+                document.getElementById('m-success').style.display = 'flex';
+            } else { showToast(langData[currentLang].outOfStock); }
+        }
+
+        function closePay() { document.getElementById('m-pay').style.display = 'none'; }
+        function closeSuccess() { document.getElementById('m-success').style.display = 'none'; render('status'); }
+        function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.classList.remove('hidden'); setTimeout(()=>s.classList.add('hidden'), 3000); }
+
+        document.addEventListener('DOMContentLoaded', () => { tg.ready(); tg.expand(); render('shop'); });
+    </script>
+</body>
+</html>
