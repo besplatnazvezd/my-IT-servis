@@ -92,7 +92,7 @@
         }
 
         const lang = {
-            RU: { shop:"ШОП", info:"ИНФО", stat:"СТАТУС", prom:"ПРОМО", cont:"СВЯЗЬ", adm:"АДМИН", no:"ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", ok:"Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
+            RU: { shop:"ШОП", luck:"УДАЧА", stat:"СТАТУС", prom:"ПРОМО", cont:"СВЯЗЬ", adm:"АДМИН", no:"ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", ok:"Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
             EN: { shop:"SHOP", luck:"LUCK", stat:"STATUS", prom:"PROMO", cont:"CONTACT", adm:"ADMIN", no:"SORRY, OUT OF STOCK", ok:"Thanks! Your account is ready ⭐️. Message @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh'>join group</a>." }
         };
 
@@ -170,7 +170,7 @@
                 </div>`;
             }
 
-            if(page === 'promo') {
+            if(page === 'promo') { // Теперь промокоды подгружаются из Supabase
                 const { data: pms, error } = await sb.from('promos').select('*');
                 if (error) {
                     console.error("Error fetching promos:", error);
@@ -210,7 +210,7 @@
             }
 
             if(page === 'admin') { // Админ-панель
-                if (user.id.toString() !== ADMIN_ID.toString()) {
+                if (user.id.toString() !== ADMIN_ID.toString()) { // Проверка ID пользователя
                     app.innerHTML = `<div class="mt-20 text-center text-red-500 font-black">ДОСТУП ЗАПРЕЩЕН</div>`;
                     return;
                 }
@@ -341,4 +341,5 @@
     </script>
 </body>
 </html>
+        
         
