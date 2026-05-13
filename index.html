@@ -3,93 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOSS STORE</title>
+    <title>NMPRODA PREMIUM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --accent: #FFD700; --bg: #000; --card: #111111; --text: #fff; --gray: #555; 
-            --nav: #000; --border: rgba(255, 215, 0, 0.15); 
-        }
-        [data-theme="light"] { 
-            --bg: #ffffff; --card: #f0f7ff; --text: #004a7c; --gray: #8ba8c7; 
-            --accent: #0088ff; --nav: #ffffff; --border: rgba(0, 136, 255, 0.1); 
-        }
+        :root { --accent: #FFD700; --bg: #000; --card: #0d0d0d; --text: #fff; --gray: #555; --border: rgba(255, 215, 0, 0.1); }
+        [data-theme="light"] { --bg: #ffffff; --card: #f0f7ff; --text: #004a7c; --gray: #8ba8c7; --accent: #0088ff; }
         
-        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 100px; overflow-x: hidden; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 100px; }
         .boss-card { background: var(--card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
         
-        .btn-gold { 
-            background: linear-gradient(180deg, var(--accent) 0%, #BA8B02 100%); 
-            color: #000; font-weight: 900; text-transform: uppercase; border-radius: 12px; 
-        }
-        [data-theme="light"] .btn-gold { background: var(--accent); color: #fff; }
-
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--nav); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        /* Фиолетовая лента/рамка при промокоде */
+        body.promo-active { border: 4px solid #a855f7; box-shadow: inset 0 0 50px rgba(168, 85, 247, 0.4); min-height: 100vh; }
+        
+        .btn-gold { background: linear-gradient(180deg, var(--accent) 0%, #BA8B02 100%); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 12px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
         .nav-item { color: var(--gray); font-size: 8px; font-weight: 800; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
         .nav-item.active { color: var(--accent); }
 
-        .vip-card { padding: 25px; position: relative; border: 1px solid var(--border); background: linear-gradient(145deg, var(--card) 0%, #050505 100%); }
-        .progress-line { height: 4px; background: rgba(128,128,128,0.1); border-radius: 2px; margin: 12px 0; position: relative; }
-        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); width: 0%; transition: 1s; }
-                .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
-        input { background: #1a1a1a; border: 1px solid var(--border); padding: 16px; border-radius: 14px; color: #fff; width: 100%; outline: none; text-align: center; font-weight: 700; }
-        [data-theme="light"] input { background: #fff; color: #000; }
-
-        .history-item { background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+        .progress-line { height: 4px; background: rgba(128,128,128,0.1); border-radius: 2px; margin: 12px 0; }
+        .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: 1s; }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
+        input { background: #151515; border: 1px solid var(--border); padding: 16px; border-radius: 14px; color: #fff; width: 100%; outline: none; text-align: center; font-weight: 700; }
+                .history-item { background: rgba(255,255,255,0.03); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 8px; border-bottom: 1px solid rgba(255,215,0,0.05); }
         .history-item b { color: var(--accent); }
     </style>
 </head>
 <body data-theme="dark">
 
     <div class="fixed top-4 right-4 flex gap-2 z-[20000]">
-        <button onclick="toggleLang()" id="langBtn" class="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black">RU</button>
+        <button onclick="toggleLang()" id="langBtn" class="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase">RU</button>
         <button onclick="toggleTheme()" class="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px]">🌗</button>
     </div>
 
-    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase"></div>
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-6 py-2 rounded-full font-black text-[10px] z-[60000] hidden uppercase shadow-lg shadow-purple-500/50"></div>
 
     <!-- МОДАЛКА ОПЛАТЫ -->
     <div id="m-pay" class="modal">
-        <div class="boss-card w-full max-w-sm p-8 text-center">
-            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-lg italic mb-6"></h2>
+        <div class="boss-card w-full max-w-sm p-8 text-center bg-[#050505]">
+            <h2 id="p-name" class="text-yellow-500 font-black uppercase text-xl italic mb-6"></h2>
             <div class="bg-white/5 p-5 rounded-2xl text-left mb-6 border border-white/5">
-                <p class="text-[8px] opacity-40 font-black mb-1 uppercase">Т-Банк / СБП</p>
+                <p class="text-[8px] opacity-40 font-black mb-1 uppercase tracking-widest">Т-Банк / СБП</p>
                 <p class="font-bold text-yellow-500 text-sm italic">+7 950 170 07 87</p>
             </div>
             <p id="p-total" class="text-4xl font-black text-white mb-8">0.00 ₽</p>
             <div class="flex gap-3">
-                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase">Назад</button>
-                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]">Я оплатил(а)</button>
+                <button onclick="closePay()" class="w-1/3 py-4 text-[9px] font-black opacity-30 uppercase" id="l-back">Назад</button>
+                <button onclick="processPurchase()" class="w-2/3 btn-gold py-4 text-[10px]" id="l-pay-btn">Я оплатил(а)</button>
             </div>
         </div>
     </div>
 
     <!-- МОДАЛКА УСПЕХА -->
     <div id="m-success" class="modal">
-        <div class="boss-card w-full max-w-sm p-8 text-center">
-            <h2 class="text-yellow-500 font-black uppercase text-xl italic mb-4">УСПЕШНО!</h2>
-            <p id="success-text" class="text-[11px] leading-relaxed opacity-70 mb-8"></p>
-            <button onclick="closeSuccess()" class="btn-gold w-full py-4 text-[10px]">ЗАКРЫТЬ</button>
-        </div>
-    </div>
-
-    <!-- АДМИНКА (Вход через ваучер) -->
-    <div id="m-admin" class="modal">
-        <div class="boss-card w-full max-w-md p-6 h-[80vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-black italic text-yellow-500">ADMIN</h2>
-                <button onclick="closeAdmin()" class="text-red-500 font-black text-[10px]">EXIT</button>
-            </div>
-            <div class="space-y-4">
-                <input id="ad-n" placeholder="Название">
-                <input id="ad-p" placeholder="Цена">
-                <input id="ad-i" placeholder="Фото URL">
-                <button onclick="addProduct()" class="btn-gold w-full py-3 text-[10px]">Добавить</button>
-                <div id="ad-list" class="space-y-2 pt-4"></div>
-            </div>
+        <div class="boss-card w-full max-w-sm p-8 text-center border-green-500/30">
+            <h2 class="text-green-500 font-black uppercase text-xl italic mb-4">УСПЕШНО</h2>
+                        <p id="success-text" class="text-[11px] leading-relaxed opacity-80 mb-8"></p>
+            <button onclick="closeSuccess()" class="btn-gold w-full py-4 text-[10px]">OK</button>
         </div>
     </div>
 
@@ -107,7 +80,7 @@
         const tg = window.Telegram.WebApp;
         const SB_URL = 'https://tivhinnaxagsazahtlnu.supabase.co';
         const SB_KEY = 'sb_publishable_yWML4Fb7nK4EKAneHKaQMA_1YJQzu1C';
-        const BOT_TOKEN = '8780961369:AAHsQp2Fi4N1swxLkpE2Jxn74fvv4qitJLM';
+        const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
         const ADMIN_ID = '7727345054';
 
         const sb = supabase.createClient(SB_URL, SB_KEY);
@@ -115,11 +88,20 @@
         
         let currentLang = 'RU';
         let activeDiscount = 0; 
+        let currentPromoCode = null;
         let activeItem = null;
 
         const langData = {
-            RU: { shop: "ШОП", info: "УДАЧА", stat: "СТАТУС", prom: "ПРОМО", cont: "СВЯЗЬ", success: "Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold;'>перейди в группу</a> и напиши @nmproda." },
-            EN: { shop: "SHOP", info: "LUCK", stat: "STATUS", prom: "PROMO", cont: "CONTACT", success: "Thanks! Account is ready ⭐️. Contact @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold;'>join group</a>." }
+            RU: { 
+                shop: "ШОП", info: "УДАЧА", stat: "СТАТУС", prom: "ПРОМО", cont: "СВЯЗЬ", back: "НАЗАД", pay: "Я ОПЛАТИЛ(А)",
+                outOfStock: "ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ",
+                success: "Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." 
+            },
+            EN: { 
+                shop: "SHOP", info: "LUCK", stat: "STATUS", prom: "PROMO", cont: "CONTACT", back: "BACK", pay: "I PAID",
+                outOfStock: "SORRY, OUT OF STOCK",
+                success: "Thanks for purchase! Account is waiting ⭐️. Message @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>join group</a> and message @nmproda." 
+            }
         };
 
         function toggleLang() {
@@ -130,12 +112,13 @@
             document.getElementById('l-stat').innerText = langData[currentLang].stat;
             document.getElementById('l-prom').innerText = langData[currentLang].prom;
             document.getElementById('l-cont').innerText = langData[currentLang].cont;
+            document.getElementById('l-back').innerText = langData[currentLang].back;
+            document.getElementById('l-pay-btn').innerText = langData[currentLang].pay;
             render(document.querySelector('.nav-item.active').id.replace('n-',''));
         }
 
         function toggleTheme() {
-            const b = document.body;
-            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+            document.body.setAttribute('data-theme', document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
         }
 
         async function render(page) {
@@ -147,17 +130,23 @@
             try {
                 if (page === 'shop') {
                     const { data: prods } = await sb.from('products').select('*');
-                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">BOSS STORE</h1>
+                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6 uppercase">NMPRODA PREMIUM</h1>
                     <div class="grid grid-cols-2 gap-4 pb-10">
                         ${(prods || []).map(p => {
-                            let price = Math.max(0, p.price - activeDiscount);
+                            let finalPrice = p.price * (1 - activeDiscount/100);
                             return `
-                            <div class="boss-card flex flex-col h-full">
+                            <div class="boss-card flex flex-col h-full border-white/5">
                                 <img src="${p.image_url}" class="w-full aspect-square object-cover">
                                 <div class="p-4 flex-1 flex flex-col justify-between">
-                                    <div class="mb-3"><h3 class="text-[9px] font-black text-gray-400 uppercase truncate">${p.name}</h3>
-                                    <p class="text-sm font-black italic ${activeDiscount > 0 ? 'text-green-500' : ''}">${price.toFixed(2)} ₽</p></div>
-                                    <button onclick="openPay('${p.name}', ${price})" class="btn-gold w-full py-3 text-[10px]">ШОП</button>
+                                    <div class="mb-3">
+                                        <h3 class="text-[9px] font-black text-white uppercase truncate">${p.name}</h3>
+                                        <p class="text-[8px] opacity-40 font-bold leading-tight mt-1 truncate">${p.description || ''}</p>
+                                        <div class="flex justify-between items-end mt-3">
+                                            <p class="text-sm font-black italic ${activeDiscount > 0 ? 'text-purple-400' : ''}">${finalPrice.toFixed(2)} ₽</p>
+                                            <span class="text-[8px] font-black opacity-30">${p.stock || 0} PCS</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="openPay('${p.name}', ${finalPrice})" class="btn-gold w-full py-3 text-[10px]">${langData[currentLang].shop}</button>
                                 </div>
                             </div>`;
                         }).join('')}
@@ -167,28 +156,28 @@
                 if (page === 'status') {
                     let { data: prof } = await sb.from('profiles').select('*').eq('id', user.id).single();
                     if(!prof) {
-                        const { data: nP } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0}).select().single();
+                        const { data: nP } = await sb.from('profiles').insert({id: user.id, user_name: user.username, total_spent: 0, used_promos: []}).select().single();
                         prof = nP;
                     }
                     const { data: ords } = await sb.from('orders').select('*').eq('user_id', user.id).order('created_at', {ascending: false});
                     const progress = Math.min((prof.total_spent / 100000) * 100, 100);
 
                     app.innerHTML = `
-                    <div class="boss-card vip-card">
+                    <div class="boss-card p-6 border-yellow-500/10 bg-gradient-to-br from-[#0a0a0a] to-black">
                         <div class="text-yellow-500 font-black italic text-[11px] uppercase tracking-widest">BOSS VIP STATUS</div>
                         <div class="mt-10">
                             <div class="flex justify-between text-[9px] font-black mb-1 opacity-50 uppercase"><span>Progress to 100k</span><span>${prof.total_spent.toFixed(2)} / 100 000.00 ₽</span></div>
                             <div class="progress-line"><div class="progress-fill" style="width:${progress}%"></div></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-y-8 gap-x-4 mt-12">
-                            <div><label class="text-[8px] opacity-30 font-black block uppercase">ID Клиента</label><span class="font-black text-[12px]">${user.id}</span></div>
-                            <div><label class="text-[8px] opacity-30 font-black block uppercase">Юзер</label><span class="font-black text-[12px]">@${user.username || 'n/a'}</span></div>
-                            <div><label class="text-[8px] opacity-30 font-black block uppercase">Скидка</label><span class="font-black text-[12px] text-yellow-500">${prof.discount || 0}%</span></div>
-                            <div><label class="text-[8px] opacity-30 font-black block uppercase">Рег</label><span class="font-black text-[12px]">21.04.2026</span></div>
+                        <div class="grid grid-cols-2 gap-y-10 mt-12">
+                            <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">ID Клиента</label><span class="font-black text-[12px]">${user.id}</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Юзер</label><span class="font-black text-[12px]">@${user.username || 'n/a'}</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Скидка</label><span class="font-black text-[12px] text-yellow-500">${prof.discount || 0}%</span></div>
+                            <div><label class="text-[8px] text-gray-500 font-black block uppercase mb-1">Рег</label><span class="font-black text-[12px]">21.04.2026</span></div>
                         </div>
-                        <div class="mt-12 mb-4 text-[9px] font-black opacity-20 uppercase italic">История покупок:</div>
+                        <div class="mt-14 mb-4 text-[9px] font-black opacity-20 uppercase italic tracking-widest">История покупок:</div>
                         <div class="space-y-2">
-                            ${(ords || []).map(o => `<div class="history-item"><span>${o.product_name}</span><b>${parseFloat(o.price).toFixed(2)} ₽</b></div>`).join('') || '<p class="opacity-10 text-[10px]">НЕТ ПОКУПОК</p>'}
+                            ${(ords || []).map(o => `<div class="history-item"><span>${o.product_name}</span><b>${parseFloat(o.price).toFixed(2)} ₽</b></div>`).join('') || '<p class="opacity-10 text-[10px] font-bold">НЕТ ПОКУПОК</p>'}
                         </div>
                     </div>`;
                 }
@@ -199,45 +188,57 @@
                         <input id="v-code" placeholder="ВВЕДИТЕ КОД">
                         <button onclick="applyV()" class="btn-gold w-full py-5 text-xs">Активировать</button>
                         <div class="pt-6 space-y-3">
-                            <div class="boss-card p-4 flex justify-between items-center opacity-60"><div><b class="text-yellow-500 text-xs">BOSS3</b><p class="text-[8px] font-black">СКИДКА 3%</p></div><span class="text-[10px] font-black">2 ОСТАЛОСЬ</span></div>
-                            <div class="boss-card p-4 flex justify-between items-center opacity-30"><div><b class="text-yellow-500 text-xs">BOSS6</b><p class="text-[8px] font-black">СКИДКА 6%</p></div><span class="text-[10px] font-black">0 ОСТАЛОСЬ</span></div>
+                            <divonclick="copyText('BOSS2')" class="boss-card p-5 flex justify-between items-center cursor-pointer active:scale-95 transition"><div><b class="text-yellow-500 text-sm">BOSS2</b><p class="text-[8px] font-black opacity-40">СКИДКА 2%</p></div><span class="text-[10px] font-black">100 ОСТАЛОСЬ</span></div>
+                            <div onclick="copyText('BOSS4')" class="boss-card p-5 flex justify-between items-center cursor-pointer active:scale-95 transition"><div><b class="text-yellow-500 text-sm">BOSS4</b><p class="text-[8px] font-black opacity-40">СКИДКА 4%</p></div><span class="text-[10px] font-black">100 ОСТАЛОСЬ</span></div>
                         </div>
+                    </div>`;
+                }
+
+                if (page === 'info') {
+                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">ИНФО</h1>
+                    <div class="boss-card p-7 leading-relaxed text-[11px] opacity-70 bg-[#050505]">
+                        Добро пожаловать в <b>NMPRODA PREMIUM</b>. Ниже вы найдете инструкцию по работе с нашими аккаунтами. <br><br>
+                        <a href="https://instructions-nine.vercel.app/" target="_blank" class="text-yellow-500 font-black underline italic uppercase text-[12px]">Читать полную инструкцию</a>
                     </div>`;
                 }
 
                 if (page === 'contact') {
                     app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Связь</h1>
                     <div class="space-y-4">
-                        <div onclick="window.open('https://t.me/+6p6zsbaMA443YmJh')" class="boss-card p-6 flex items-center gap-4 cursor-pointer">
-                            <span class="text-2xl">📢</span><div><b class="text-sm uppercase block font-black">BOSS КАНАЛ</b><p class="text-[9px] opacity-40">Новости и скидки</p></div>
+                        <div onclick="window.open('https://t.me/+6p6zsbaMA443YmJh')" class="boss-card p-6 flex items-center gap-5 cursor-pointer bg-[#050505]">
+                            <span class="text-3xl">📢</span><div><b class="text-sm uppercase block font-black">NMPRODA КАНАЛ</b><p class="text-[9px] opacity-40">Новости и скидки</p></div>
                         </div>
-                        <div onclick="window.open('https://t.me/nmproda')" class="boss-card p-6 flex items-center gap-4 cursor-pointer">
-                            <span class="text-2xl">🤵</span><div><b class="text-sm uppercase block font-black">МЕНЕДЖЕР</b><p class="text-[9px] opacity-40">@NMPRODA</p></div>
+                        <div onclick="window.open('https://t.me/nmproda')" class="boss-card p-6 flex items-center gap-5 cursor-pointer bg-[#050505]">
+                            <span class="text-3xl">🤵</span><div><b class="text-sm uppercase block font-black">МЕНЕДЖЕР</b><p class="text-[9px] opacity-40">@NMPRODA</p></div>
                         </div>
                     </div>`;
                 }
-                
-                if (page === 'info') {
-                    app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-lg mb-8 uppercase">Инфо</h1>
-                    <div class="boss-card p-6 leading-relaxed text-[11px] opacity-70">
-                        Добро пожаловать в BOSS STORE. Ниже вы найдете инструкцию по работе с нашими аккаунтами. <br><br>
-                        <a href="#" class="text-yellow-500 font-black underline italic">ЧИТАТЬ ПОЛНУЮ ИНСТРУКЦИЮ</a>
-                    </div>`;
-                }
-
-            } catch (e) { app.innerHTML = `<div class="text-center p-20 text-red-500 font-black">ERROR</div>`; }
+            } catch (e) { app.innerHTML = `<div class="text-center p-20 text-red-500 font-black">DATABASE ERROR</div>`; }
         }
 
         async function applyV() {
-            const code = document.getElementById('v-code').value.trim();
-            if(code === 'Derty456765') return openAdmin();
+            const code = document.getElementById('v-code').value.trim().toUpperCase();
+            if(!code) return;
             
-            const { data: v } = await sb.from('vouchers').select('*').eq('code', code).eq('is_used', false).single();
-            if(v) {
-                activeDiscount = parseFloat(v.value);
-                await sb.from('vouchers').update({is_used: true}).eq('id', v.id);
-                showToast("АКТИВИРОВАНО!"); render('shop');
-            } else { showToast("КОД НЕВЕРЕН"); }
+            let { data: prof } = await sb.from('profiles').select('used_promos').eq('id', user.id).single();
+            if(prof?.used_promos?.includes(code)) { showToast("ВЫ УЖЕ ИСПОЛЬЗОВАЛИ ЭТОТ КОД"); return; }
+
+            // Логика скидок (2% и 4%)
+            let val = 0;
+            if(code === 'BOSS2') val = 2;
+            else if(code === 'BOSS4') val = 4;
+            else { showToast("НЕВЕРНЫЙ КОД"); return; }
+
+            activeDiscount = val;
+            currentPromoCode = code;
+            document.body.classList.add('promo-active');
+            showToast("ПРОМОКОД АКТИВИРОВАН!");
+            render('shop');
+        }
+
+        function copyText(txt) {
+            navigator.clipboard.writeText(txt);
+            showToast("КОД СКОПИРОВАН: " + txt);
         }
 
         function openPay(n, p) { 
@@ -248,14 +249,15 @@
         }
 
         async function processPurchase() {
-            const { data: pr } = await sb.from('profiles').select('discount').eq('id', user.id).single();
-            const { data: prod } = await sb.from('products').select('stock').eq('name', activeItem.n).single();
+            const { data: prod } = await sb.from('products').select('*').eq('name', activeItem.n).single();
             
-            // ТВОЙ ШАБЛОН ДЛЯ АДМИНА
-            const adminText = `🔥 НОВЫЙ ЗАКАЗ 🔥\n💎 Товар-[${activeItem.n}] 💎\n📦 Количество-[1] 📦\n🔢 Остаток-[${(prod?.stock || 0) - 1}] 🔢\n👛 Цена-[${activeItem.p.toFixed(2)} ₽] 👛\n🙊 Скидка-[${pr?.discount || 0}%] 🙊\n❤️ Мой айди-[${user.id}] ❤️\n⭐️ Мой юзернейм-[@${user.username || 'n/a'}] ⭐️`;
+            if(!prod || prod.stock <= 0) { showToast(langData[currentLang].outOfStock); return; }
+
+            const adminMsg = `🔥 НОВЫЙ ЗАКАЗ 🔥\n💎 Товар-[${activeItem.n}] 💎\n📦 Количество-[1] 📦\n🔢 Остаток-[${prod.stock - 1}] 🔢\n👛 Цена-[${activeItem.p.toFixed(2)} ₽] 👛\n❤️ Мой айди-[${user.id}] ❤️\n⭐️ Мой юзернейм-[@${user.username || 'n/a'}] ⭐️`;
+            
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({chat_id: ADMIN_ID, text: adminText})
+                body: JSON.stringify({chat_id: ADMIN_ID, text: adminMsg})
             });
 
             const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
@@ -268,36 +270,22 @@
 
                 await sb.from('orders').insert({user_id: user.id, product_name: activeItem.n, price: activeItem.p});
                 await sb.from('accounts_data').update({is_sold: true}).eq('id', acc.id);
-                const { data: curPr } = await sb.from('profiles').select('total_spent').eq('id', user.id).single();
-                await sb.from('profiles').update({total_spent: (curPr?.total_spent || 0) + activeItem.p}).eq('id', user.id);
+                await sb.from('products').update({stock: prod.stock - 1}).eq('id', prod.id);
+
+                let { data: curProf } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                let used = curProf.used_promos || [];
+                if(currentPromoCode) used.push(currentPromoCode);
+                
+                await sb.from('profiles').update({total_spent: (curProf.total_spent || 0) + activeItem.p, used_promos: used}).eq('id', user.id);
 
                 activeDiscount = 0; 
+                currentPromoCode = null;
+                document.body.classList.remove('promo-active');
                 document.getElementById('success-text').innerHTML = langData[currentLang].success;
                 document.getElementById('m-pay').style.display = 'none';
                 document.getElementById('m-success').style.display = 'flex';
-            } else { showToast("НЕТ В НАЛИЧИИ"); }
+            } else { showToast(langData[currentLang].outOfStock); }
         }
-
-        // АДМИН ПАНЕЛЬ
-        function openAdmin() { document.getElementById('m-admin').style.display = 'flex'; loadAdmin(); }
-        function closeAdmin() { document.getElementById('m-admin').style.display = 'none'; }
-        async function loadAdmin() {
-            const { data: ps } = await sb.from('products').select('*');
-            document.getElementById('ad-list').innerHTML = (ps || []).map(p => `
-                <div class="flex justify-between bg-white/5 p-3 rounded-lg text-[10px] font-bold">
-                    <span>${p.name} (${p.price}₽)</span>
-                    <button onclick="delProd(${p.id})" class="text-red-500">УДАЛИТЬ</button>
-                </div>
-            `).join('');
-        }
-        async function addProduct() {
-            const n = document.getElementById('ad-n').value;
-            const p = document.getElementById('ad-p').value;
-            const i = document.getElementById('ad-i').value;
-            await sb.from('products').insert({name: n, price: p, image_url: i});
-            loadAdmin(); showToast("OK");
-        }
-        async function delProd(id) { await sb.from('products').delete().eq('id', id); loadAdmin(); }
 
         function closePay() { document.getElementById('m-pay').style.display = 'none'; }
         function closeSuccess() { document.getElementById('m-success').style.display = 'none'; render('status'); }
