@@ -70,7 +70,7 @@
         const BOT_TOKEN = '8780961369:AAHsqP2Fi4N1swLkpe2Jxn74fvv4qitJLM';
         const ADMIN_ID = '7727345054'; // Твой ID администратора
                 const sb = supabase.createClient(SB_URL, SB_KEY);
-        // Заглушка для user.id и user.username на случай, если Telegram WebApp не инициализировался (для дебага в браузере)
+        // Заглушка для user.id и user.username на случай, если Telegram WebApp не инициализировался
         const user = tg.initDataUnsafe?.user || { id: '123456789', username: 'testuser' }; 
         
         let currentLang = 'RU';
@@ -85,21 +85,22 @@
                 const year = d.getFullYear();
                 const month = (d.getMonth() + 1).toString().padStart(2, '0');
                 const day = d.getDate().toString().padStart(2, '0');
-                s = { spent: 0, history: [], reg: `${day}.${month}.${year}`, usedPromo: [] }; // 'usedPromo' вместо 'used'
+                // 'usedPromo' хранит объекты { code: 'PROMO_CODE', discount: N }
+                s = { spent: 0, history: [], reg: `${day}.${month}.${year}`, usedPromo: [] }; 
                 localStorage.setItem('stats_' + user.id, JSON.stringify(s));
             } else s = JSON.parse(s);
             return s;
         }
 
         // --- КОНФИГУРАЦИЯ ПРОМОКОДОВ (ЛОКАЛЬНО) ---
+        // Промокоды хранятся здесь, а не в Supabase
         const PROMO_CODES = {
             VLASTELIN2: { discount: 2, stock: 100 }, // Пример: название кода, скидка в %, начальное количество
             VLASTELIN4: { discount: 4, stock: 100 },
         };
 
         // --- ЯЗЫКОВЫЕ ДАННЫЕ ---
-        const lang = {
-            RU: { shop:"ШОП", luck:"УДАЧА", stat:"СТАТУС", prom:"ПРОМО", cont:"СВЯЗЬ", adm:"АДМИН", no:"ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", ok:"Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
+        const lang = {RU: { shop:"ШОП", luck:"УДАЧА", stat:"СТАТУС", prom:"ПРОМО", cont:"СВЯЗЬ", adm:"АДМИН", no:"ИЗВИНИТЕ, ТОВАРА НЕТ В НАЛИЧИИ", ok:"Спасибо за покупку. Твой аккаунт уже ждёт тебя ⭐️. Пиши сюда @nmproda, если спамблок <a href='https://t.me/+6p6zsbaMA443YmJh' style='color:#FFD700; font-weight:bold; text-decoration:underline;'>перейди в группу</a> и напиши @nmproda." },
             EN: { shop:"SHOP", luck:"LUCK", stat:"STATUS", prom:"PROMO", cont:"CONTACT", adm:"ADMIN", no:"SORRY, OUT OF STOCK", ok:"Thanks! Your account is ready ⭐️. Message @nmproda. If spam-blocked, <a href='https://t.me/+6p6zsbaMA443YmJh'>join group</a>." }
         };
 
@@ -113,7 +114,7 @@
                 <div onclick="render('promo')" class="nav-item" id="n-promo">🔑<span>${lang[currentLang].prom}</span></div>
                 <div onclick="render('contact')" class="nav-item" id="n-contact">💬<span>${lang[currentLang].cont}</span></div>
             `;
-            if(user.id.toString() === ADMIN_ID.toString()) {
+            if(user.id.toString() === ADMIN_ID.toString()) { // Отображать кнопку "АДМИН" только для админа
                 html += `<div onclick="render('admin')" class="nav-item" id="n-admin">⚙️<span>${lang[currentLang].adm}</span></div>`;
             }
             nav.innerHTML = html;
@@ -136,6 +137,7 @@
                 app.innerHTML = `<h1 class="text-center text-yellow-500 font-black italic text-xl mb-6">NMPRODA PREMIUM</h1>
                 <div class="grid grid-cols-2 gap-4 pb-10">
                     ${(prods || []).map(p => {
+                        // Применяем скидку, если она активна
                         let pr = p.price * (1 - activeDiscount/100);
                         const displayStock = p.stock ?? 0; // Отобразить 0, если stock null/undefined
                         return `<div class="boss-card flex flex-col h-full">
@@ -184,12 +186,13 @@
                 <button onclick="applyV()" class="btn-gold w-full py-5 text-xs mb-10">Активировать</button>
                 <div class="space-y-3">
                     ${Object.entries(PROMO_CODES).map(([code, data]) => {
-                        const usedCount = s.usedPromo.filter(uc => uc.code === code).length;
-                        const remainingStock = data.stock - usedCount;
-                        const isCodeActive = remainingStock > 0 && !s.usedPromo.some(uc => uc.code === code);
+                        const usedEntry = s.usedPromo.find(uc => uc.code === code);
+                        const remainingStock = usedEntry ? data.stock - 1 : data.stock; // Уменьшаем остаток, если уже был использован
+                        const isAlreadyUsed = !!usedEntry; // Был ли уже использован
+                        const isOutOfStock = remainingStock <= 0;
 
                         return `
-                        <div onclick="${isCodeActive ? `copyCode('${code}')` : ''}" class="boss-card p-5 flex justify-between items-center ${isCodeActive ? 'cursor-pointer active:scale-95 transition' : 'opacity-50'}">
+                        <div onclick="${!isAlreadyUsed && !isOutOfStock ? `copyCode('${code}')` : ''}" class="boss-card p-5 flex justify-between items-center ${!isAlreadyUsed && !isOutOfStock ? 'cursor-pointer active:scale-95 transition' : 'opacity-50'}">
                             <div><b class="text-yellow-500 text-sm">${code}</b><p class="text-[8px] font-black opacity-40 uppercase">Скидка ${data.discount}%</p></div>
                             <span class="text-[10px] font-black">${remainingStock} ОСТАЛОСЬ</span>
                         </div>`;
@@ -274,34 +277,32 @@
             const codeInput = document.getElementById('v-code').value.trim().toUpperCase();
             const s = getStats();
             
-            // Проверка, есть ли такой промокод вообще
             if (!PROMO_CODES[codeInput]) {
                 showToast("НЕВЕРНЫЙ КОД");
                 return;
             }
 
             const promoData = PROMO_CODES[codeInput];
-            const usedCount = s.usedPromo.filter(uc => uc.code === codeInput).length;
-            const remainingStock = promoData.stock - usedCount;
+            const usedEntry = s.usedPromo.find(uc => uc.code === codeInput);
+            const remainingStock = usedEntry ? promoData.stock - 1 : promoData.stock; // Количество доступных использований
 
-            // Проверка, использовал ли пользователь этот промокод
-            if (s.usedPromo.some(uc => uc.code === codeInput)) {
+            if (usedEntry) { // Если промокод уже был использован этим пользователем
                 showToast("УЖЕ ИСПОЛЬЗОВАНО");
                 return;
             }
 
-            // Проверка, есть ли еще промокоды в наличии
-            if (remainingStock <= 0) {
+            if (remainingStock <= 0) { // Если промокод закончился
                 showToast("ПРОМОКОД ЗАКОНЧИЛСЯ");
                 return;
             }
 
             // Активация промокода
             activeDiscount = promoData.discount;
-            s.usedPromo.push({ code: codeInput, discount: promoData.discount }); // Сохраняем код и скидку
+            // Добавляем запись об использовании промокода
+            s.usedPromo.push({ code: codeInput, discount: promoData.discount }); 
             localStorage.setItem('stats_' + user.id, JSON.stringify(s));
             
-            document.body.classList.add('promo-active');
+            document.body.classList.add('promo-active'); // Активируем свечение
             showToast("АКТИВИРОВАНО!"); 
             render('shop'); // Обновить магазин, чтобы цены изменились
             render('promo'); // Обновить промо-страницу, чтобы показать актуальное количество
@@ -317,39 +318,48 @@
 
         // --- ОБРАБОТКА ПОКУПКИ ---
         async function processPurchase() {
+            // Проверка наличия товара
             const { data: prod } = await sb.from('products').select('*').eq('name', activeItem.n).single();
             if(!prod || (prod.stock ?? 0) <= 0) return showToast(lang[currentLang].no); 
 
+            // Получение аккаунта для выдачи
             const { data: acc } = await sb.from('accounts_data').select('*').eq('product_name', activeItem.n).eq('is_sold', false).limit(1).single();
             if(!acc) return showToast(lang[currentLang].no);
 
+            // Отправка сообщения админу
             const adminMsg = `🔥 ЗАКАЗ 🔥\n💎 Товар: ${activeItem.n}\n👛 Цена: ${activeItem.p.toFixed(2)} ₽\n👤 Юзер: @${user.username || 'n/a'} (${user.id})`;
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:ADMIN_ID, text:adminMsg})});
-
+            // Отправка аккаунта пользователю
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:user.id, text:`✅ ТВОЙ АККАУНТ:\n\n${acc.data}`})});
 
+            // Обновление статуса аккаунта и стока товара
             await sb.from('accounts_data').update({ is_sold: true }).eq('id', acc.id);
-            await sb.from('products').update({ stock: prod.stock - 1 })\ 
-.eq('id', prod.id);
+            await sb.from('products').update({ stock: prod.stock - 1 }).eq('id', prod.id);
 
+            // Обновление статистики пользователя
             const s = getStats();
             s.spent += activeItem.p;
             s.history.push({ name: activeItem.n, price: activeItem.p });
             localStorage.setItem('stats_'+user.id, JSON.stringify(s));
 
-            activeDiscount = 0; document.body.classList.remove('promo-active');
+            // Сброс активной скидки и свечения
+            activeDiscount = 0; 
+            document.body.classList.remove('promo-active');
+            
+            // Показ модалки успеха
             document.getElementById('success-text').innerHTML = lang[currentLang].ok;
             document.getElementById('m-pay').style.display = 'none';
             document.getElementById('m-success').style.display = 'flex';
         }
 
         function closePay() { document.getElementById('m-pay').style.display = 'none'; }
-        function closeSuccess() { document.getElementById('m-success').style.display = 'none'; render('status'); }
+        function closeSuccess() { document.getElementById('m-success').style.display = 'none'; render('status'); } // После успеха перейти в статус
+        
         function showToast(t) { 
             const s = document.getElementById('toast'); 
             s.innerText = t; 
             s.classList.remove('hidden'); 
-            s.classList.add('animate-fade-in-up'); 
+            s.classList.add('animate-fade-in-up'); // Можно добавить CSS для анимации появления
             setTimeout(()=> {
                 s.classList.remove('animate-fade-in-up');
                 s.classList.add('hidden');
