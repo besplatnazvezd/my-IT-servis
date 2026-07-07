@@ -19,10 +19,10 @@ BOT_USERNAME = "imperia_webot"
 # --- Ссылки на картинки (ИСПРАВЛЕНО на ПРЯМЫЕ ссылки) ---
 # ЭТА ССЫЛКА (ангел/бомбочка) - для АВАТАРА бота в BotFather. Бот НЕ отправляет ее в чат.
 # Вставь эту ссылку, когда BotFather попросит "отправить фото".
-BOTFATHER_PROFILE_PICTURE_URL = "https://i.ibb.co/knycVGM/1000093315.jpg"
+BOTFATHER_PROFILE_PICTURE_URL = "https://i.ibb.co/qMQdGHqD/IMG-20260707-233514-557.jpg"
 
 # ЭТА ССЫЛКА (кот с монетками) - для сообщения, которое бот отправляет в ответ на /start.
-START_MESSAGE_IMAGE_URL = "https://i.ibb.co/jPPjTDBv/1000093316.jpg"
+START_MESSAGE_IMAGE_URL = "https://i.ibb.co/jPJjTDBv/1000093316.jpg"
 
 # --- Тексты сообщений для бота ---
 
