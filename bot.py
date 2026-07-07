@@ -78,12 +78,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обрабатывает нажатия на inline-кнопки."""
-    query = update.callback_query
-    await query.answer() # Обязательно подтверждаем нажатие кнопки
+       query = update.callback_query
+    await query.answer()
 
-        if query.data == "play_game":
-        # Создаем кнопки меню игр (эмодзи и разделы)
+    if query.data == "play_game":
+        # Создаем кнопки меню игр
         keyboard = [
             [
                 InlineKeyboardButton("🏀", callback_data="game_basket"),
@@ -102,16 +101,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # Отправляем новое сообщение с играми в тот же чат
+        # Отправляем сообщение с играми
         await context.bot.send_message(
             chat_id=query.message.chat_id,
             text=GAME_MENU_TEXT,
             reply_markup=reply_markup,
             parse_mode="HTML"
-        )
-    # Здесь можно добавить обработку других кнопок, если они появятся.
-
-# --- Основная функция для запуска бота ---
+             )
+        # --- Основная функция для запуска бота ---
 def main() -> None:
     """Запускает бота."""
     # Создаем объект Application и передаем токен бота.
