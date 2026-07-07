@@ -78,9 +78,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-          query = update.callback_query
+        query = update.callback_query
     await query.answer()
-if query.data == "play_game":
+    if query.data == "play_game":
     # Создаем кнопки меню игр
     keyboard = [
         [
@@ -99,7 +99,7 @@ if query.data == "play_game":
             InlineKeyboardButton("🕹 Играть в WEB", url="https://..."),
             InlineKeyboardButton("🛠 Изменить ставку", callback_data="change_bet"),
         ],
-    ]
+        ]
     reply_markup = InlineKeyboardMarkup(keyboard)
         # Отправляем сообщение с играми
         await context.bot.send_message(
@@ -122,5 +122,5 @@ def main() -> None:
     # allowed_updates=Update.ALL_TYPES - рекомендуется для Railway, чтобы избежать проблем с определением webhook'ов.
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-if __name__ == "__main__":
+if name == "main":
     main()
