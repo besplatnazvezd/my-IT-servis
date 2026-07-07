@@ -1,27 +1,15 @@
 import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-
-# --- Конфигурация ---
-# Токен бота, полученный от BotFather.
-# Рекомендуется хранить его в переменной окружения (например, на Railway).
-# Для локального тестирования можно временно указать токен здесь,
-# но при деплое убедитесь, что BOT_TOKEN установлен как переменная окружения.
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8894416195:AAHZ4i0sTodK5AYKhqZfNIlrFBnlRTOiVR8")
 
 # ID администратора (пока не используется в этом базовом примере, но может понадобиться)
 ADMIN_ID = -7727345054
 
-# Юзернейм вашего бота (важно, чтобы он совпадал с реальным юзернеймом бота в Telegram)
-# Убедитесь, что это ваш actual юзернейм!
 BOT_USERNAME = "imperia_webot" 
 
-# --- Ссылки на картинки (ИСПРАВЛЕНО на ПРЯМЫЕ ссылки) ---
-# ЭТА ССЫЛКА (ангел/бомбочка) - для АВАТАРА бота в BotFather. Бот НЕ отправляет ее в чат.
-# Вставь эту ссылку, когда BotFather попросит "отправить фото".
 BOTFATHER_PROFILE_PICTURE_URL = "https://i.ibb.co/qMQdGHqD/IMG-20260707-233514-557.jpg"
 
-# ЭТА ССЫЛКА (кот с монетками) - для сообщения, которое бот отправляет в ответ на /start.
 START_MESSAGE_IMAGE_URL = "https://i.ibb.co/jPJjTDBv/1000093316.jpg"
 
 # --- Тексты сообщений для бота ---
@@ -54,6 +42,15 @@ START_MESSAGE_CAPTION = """
 🎮 20+ бесплатных игр без скачивания, прямо в Telegram.
 🤝 Соревнуйся с друзьями и прокачивай свои каналы и чаты. 🏆
 """
+# Меню выбора игр
+GAME_MENU_TEXT = """
+🎮 ДАВАЙ НАЧНЕМ ИГРАТЬ!
+
+💰 Баланс: 5 000 ncoin
+💎 Ставка: 100 ncoin
+
+👇 Выбери игру и начинай!
+"""
 
 # --- Обработчики команд ---
 
@@ -85,12 +82,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer() # Обязательно подтверждаем нажатие кнопки
 
-    if query.data == "play_game":
-        # Если нажата кнопка "Играть"
-        await query.edit_message_caption(
-            caption=query.message.caption + "\n\n*Начинаем играть!* (Эта функция будет разработана позже)",
-            reply_markup=query.message.reply_markup,
-            parse_mode="Markdown" # Используем Markdown для жирного текста
+        if query.data == "play_game":
+        # Создаем кнопки меню игр (эмодзи и разделы)
+        keyboard = [
+            [
+                InlineKeyboardButton("🏀", callback_data="game_basket"),
+                InlineKeyboardButton("⚽", callback_data="game_ball"),
+                InlineKeyboardButton("🎯", callback_data="game_darts"),
+                InlineKeyboardButton("🎳", callback_data="game_bowling"),
+                InlineKeyboardButton("🎲", callback_data="game_dice"),
+                InlineKeyboardButton("🎰", callback_data="game_slots")
+            ],
+            [
+                InlineKeyboardButton("🚀 Быстрые", callback_data="fast_games"),
+                InlineKeyboardButton("💣 Режимы", callback_data="modes")
+            ],
+            [InlineKeyboardButton("🕹️ Играть в WEB", url=f"https://t.me/{BOT_USERNAME}")],
+            [InlineKeyboardButton("✏️ Изменить ставку", callback_data="change_bet")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        # Отправляем новое сообщение с играми в тот же чат
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=GAME_MENU_TEXT,
+            reply_markup=reply_markup,
+            parse_mode="HTML"
         )
     # Здесь можно добавить обработку других кнопок, если они появятся.
 
