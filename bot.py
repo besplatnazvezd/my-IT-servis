@@ -14,18 +14,20 @@ ADMIN_ID = -7727345054
 
 # Юзернейм вашего бота (важно, чтобы он совпадал с реальным юзернеймом бота в Telegram)
 # Убедитесь, что это ваш actual юзернейм!
-BOT_USERNAME = "imperia_webot" 
+BOT_USERNAME = "nminesbot" 
 
-# --- Ссылки на картинки ---
-UPPER_IMAGE_URL = "https://boss-drop.vercel.app/share/BOSS_DROP_aHR0cHM6Ly9pLmliYi5jby9rbnljVkdNLzEwMDAwOTMzMTUuanBn.jpg"
-LOWER_IMAGE_URL = "https://boss-drop.vercel.app/share/BOSS_DROP_aHR0cHM6Ly9pLmliYi5jby9qUEpqVERCdi8xMDAwMDkzMzE2LmpwZw.jpg"
+# --- Ссылки на картинки (ОБРАТИ ВНИМАНИЕ: Ссылки теперь прямые, чтобы не было ошибок) ---
+# Эта картинка для АВАТАРА бота в BotFather (бомбочка/ангел). Не отправляется ботом в чат.
+BOTFATHER_PROFILE_PICTURE_URL = "https://i.ibb.co/knycVGM/1000093315.jpg"
+
+# Эта картинка для ОТВЕТА на команду /start (кот с монетками).
+START_MESSAGE_IMAGE_URL = "https://i.ibb.co/jPPjTDBv/1000093316.jpg"
 
 # --- Тексты сообщений для бота ---
 
-# Первое сообщение (описание функционала бота)
-FIRST_MESSAGE_TEXT = f"""
-Что умеет этот бот?
-
+# ЭТОТ ТЕКСТ ПРЕДНАЗНАЧЕН ДЛЯ УСТАНОВКИ В BotFather В РАЗДЕЛЕ "About" (ОПИСАНИЕ БОТА).
+# Бот его сам не отправляет в чат.
+BOTFATHER_ABOUT_TEXT = f"""
 💥💣 Популярная игра Минёр в Telegram
 
 ✨ Список наших самых популярных игр:
@@ -41,10 +43,12 @@ FIRST_MESSAGE_TEXT = f"""
 
 ⚡️ Работает в личных сообщениях, группах и инлайн
 @{BOT_USERNAME}
+
+⬇️ Жми старт и начинай играть ⬇️
 """
 
-# Второе сообщение (текст под картинкой с котом)
-SECOND_MESSAGE_TEXT = """
+# ЭТОТ ТЕКСТ БУДЕТ ОТПРАВЛЕН БОТОМ В ОТВЕТ НА КОМАНДУ /start (под картинкой с котом).
+START_MESSAGE_CAPTION = """
 Привет! 👋 Ты в NMines Bot — место, где время летит незаметно!
 🎮 20+ бесплатных игр без скачивания, прямо в Telegram.
 🤝 Соревнуйся с друзьями и прокачивай свои каналы и чаты. 🏆
@@ -55,22 +59,25 @@ SECOND_MESSAGE_TEXT = """
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Обрабатывает команду /start.
-    Отправляет верхнюю картинку и первое текстовое сообщение с кнопкой "Открыть меню игр".
+    Отправляет сообщение с картинкой-котом и кнопками
+    как непосредственный ответ на /start, без предварительных сообщений.
     """
     chat_id = update.effective_chat.id
 
-    # 1. Отправляем верхнюю картинку
-    await context.bot.send_photo(chat_id=chat_id, photo=UPPER_IMAGE_URL)
-
-    # 2. Отправляем первое текстовое сообщение с кнопкой для перехода ко второму сообщению
-    keyboard = [[InlineKeyboardButton("Открыть меню игр 🎮", callback_data="show_menu")]]
+    # Подготавливаем кнопки для сообщения
+    keyboard = [
+        [InlineKeyboardButton("Играть 🕹️", callback_data="play_game")],
+        [InlineKeyboardButton("Добавить бота в чат 💬", url=f"https://t.me/{BOT_USERNAME}?startgroup=true")]
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await context.bot.send_message(
+    # Отправляем сообщение с картинкой-котом и кнопками
+    await context.bot.send_photo(
         chat_id=chat_id,
-        text=FIRST_MESSAGE_TEXT,
-        parse_mode="HTML",
-        reply_markup=reply_markup
+        photo=START_MESSAGE_IMAGE_URL, # Используем картинку с котом
+        caption=START_MESSAGE_CAPTION, # Используем текст для ответа на /start
+        reply_markup=reply_markup,
+        parse_mode="HTML"
     )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -78,25 +85,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer() # Обязательно подтверждаем нажатие кнопки
 
-    if query.data == "show_menu":
-        # Если нажата кнопка "Открыть меню игр", отправляем второе сообщение с картинкой-котом
-        keyboard = [
-            [InlineKeyboardButton("Играть 🕹️", callback_data="play_game")],
-            [InlineKeyboardButton("Добавить бота в чат 💬", url=f"https://t.me/{BOT_USERNAME}?startgroup=true")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await context.bot.send_photo(
-            chat_id=query.message.chat_id,
-            photo=LOWER_IMAGE_URL,
-            caption=SECOND_MESSAGE_TEXT,
-            reply_markup=reply_markup,
-            parse_mode="HTML"
-        )
-    elif query.data == "play_game":
-        # Если нажата кнопка "Играть" (из второго сообщения)
-        # Пример обработки: редактируем подпись сообщения, добавляя фразу о начале игры.
-        # В реальной игре здесь будет запуск самой игры или меню выбора игр.
+    if query.data == "play_game":
+        # Если нажата кнопка "Играть"
         await query.edit_message_caption(
             caption=query.message.caption + "\n\n*Начинаем играть!* (Эта функция будет разработана позже)",
             reply_markup=query.message.reply_markup,
