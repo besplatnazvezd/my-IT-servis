@@ -78,10 +78,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-       query = update.callback_query
+          query = update.callback_query
     await query.answer()
-
-    if query.data == "play_game":
+       if query.data == "play_game":
         # Создаем кнопки меню игр
         keyboard = [
             [
