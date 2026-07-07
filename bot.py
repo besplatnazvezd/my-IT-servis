@@ -80,26 +80,27 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           query = update.callback_query
     await query.answer()
-       if query.data == "play_game":
-        # Создаем кнопки меню игр
-        keyboard = [
-            [
-                InlineKeyboardButton("🏀", callback_data="game_basket"),
-                InlineKeyboardButton("⚽", callback_data="game_ball"),
-                InlineKeyboardButton("🎯", callback_data="game_darts"),
-                InlineKeyboardButton("🎳", callback_data="game_bowling"),
-                InlineKeyboardButton("🎲", callback_data="game_dice"),
-                InlineKeyboardButton("🎰", callback_data="game_slots")
-            ],
-            [
-                InlineKeyboardButton("🚀 Быстрые", callback_data="fast_games"),
-                InlineKeyboardButton("💣 Режимы", callback_data="modes")
-            ],
-            [InlineKeyboardButton("🕹️ Играть в WEB", url=f"https://t.me/{BOT_USERNAME}")],
-            [InlineKeyboardButton("✏️ Изменить ставку", callback_data="change_bet")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
+if query.data == "play_game":
+    # Создаем кнопки меню игр
+    keyboard = [
+        [
+            InlineKeyboardButton("🏀", callback_data="game_basket"),
+            InlineKeyboardButton("⚽", callback_data="game_ball"),
+            InlineKeyboardButton("🎯", callback_data="game_darts"),
+            InlineKeyboardButton("🎳", callback_data="game_bowling"),
+            InlineKeyboardButton("🎲", callback_data="game_dice"),
+            InlineKeyboardButton("🎰", callback_data="game_slots"),
+        ],
+        [
+            InlineKeyboardButton("🚀 Быстрые", callback_data="fast"),
+            InlineKeyboardButton("🕹 Режимы", callback_data="modes"),
+        ],
+        [
+            InlineKeyboardButton("🕹 Играть в WEB", url="https://..."),
+            InlineKeyboardButton("🛠 Изменить ставку", callback_data="change_bet"),
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
         # Отправляем сообщение с играми
         await context.bot.send_message(
             chat_id=query.message.chat_id,
