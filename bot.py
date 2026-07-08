@@ -195,23 +195,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_id = query.from_user.id
     username = query.from_user.username or query.from_user.first_name or "Игрок"
     user_data = await db_get_or_create(user_id, query.from_user.username)
-    
+
         # Кнопка "Играть 🕹️"
-        if query.data == "play_game":
-            text = (
-                "<b>🎮 ДАВАЙ НАЧНЕМ ИГРАТЬ!</b>\n\n"
-                "💰 <b>Баланс:</b>\n"
-                f"└ 💎 <code>{user_data['ncoin']} ncoin</code>\n"
-                f"└ ⭐ <code>{user_data['nmp']} nmp</code>\n\n"
-                f"💸 <b>Ставка:</b> <code>{user_data['current_bet']} ncoin</code>\n\n"
-                "👇 Выбери игру и начинай!"
-            )
+    if query.data == "play_game":
+        text = (
+            "<b>🎮 ДАВАЙ НАЧНЕМ ИГРАТЬ!</b>\n\n"
+            "💰 <b>Баланс:</b>\n"
+            f"└ 💎 <code>{user_data['ncoin']} ncoin</code>\n"
+            f"└ ⭐ <code>{user_data['nmp']} nmp</code>\n\n"
+            f"💸 <b>Ставка:</b> <code>{user_data['current_bet']} ncoin</code>\n\n"
+            "👇 Выбери игру и начинай!"
+        )
         await query.edit_message_text(
             text=text,
             reply_markup=get_game_keyboard(),
             parse_mode="HTML"
         )
-        
     # Раздел "Баскетбол" (выбор исхода)
     elif query.data == "game_basket":
         text = (
