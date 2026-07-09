@@ -1,3 +1,2 @@
-telethon
-deep-translator
-
+python-telegram-bot~=21.2 
+python-dotenv~=1.0
